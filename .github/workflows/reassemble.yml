@@ -1,0 +1,24 @@
+name: Reassemble handoff ZIP
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  reassemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reassemble and publish ZIP
+        run: |
+          set -euo pipefail
+          zip="Touch-Parchis-DeepSeek-V1-Handoff-REVISED-20261002.zip"
+          cat upload_parts/part_* > "$zip"
+          test "$(stat -c %s "$zip")" -eq 14080713
+          unzip -t "$zip"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$zip"
+          git rm -r upload_parts .github/workflows/reassemble.yml
+          git commit -m "Publish complete DeepSeek V1 handoff ZIP"
+          git push
