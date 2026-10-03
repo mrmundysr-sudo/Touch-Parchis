@@ -46,6 +46,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import com.touchdevelopment.touchparchis.R
 import com.touchdevelopment.touchparchis.data.GameplayCoords
 import com.touchdevelopment.touchparchis.data.NormPoint
@@ -84,6 +87,17 @@ fun TouchParchisApp(viewModel: GameViewModel, onExit: () -> Unit) {
 
     androidx.compose.runtime.DisposableEffect(reelSounds) {
         onDispose { reelSounds.release() }
+    }
+    val lifecycleOwner = context as? LifecycleOwner
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner, reelSounds) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) reelSounds.pause()
+        }
+        lifecycleOwner?.lifecycle?.addObserver(observer)
+        onDispose {
+            lifecycleOwner?.lifecycle?.removeObserver(observer)
+            reelSounds.pause()
+        }
     }
 
     LaunchedEffect(viewModel.screen, reelSounds) {
@@ -597,6 +611,7 @@ object GameplayRenderer {
         slot: ReelSlot,
         vm: GameViewModel
     ) {
+        if (state.phase == ReelPhase.IDLE && state.value !in 1..6) return
         val r = layout.rect(zone)
         val radius = CornerRadius(layout.w(0.010f))
         val digitSize = minOf(r.width * 0.78f, r.height * 0.58f)
@@ -693,7 +708,7 @@ object GameplayRenderer {
 
     private fun DrawScope.drawDoublesFlourish(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         val elapsed = now - vm.doublesPulseAtMs
-        if (elapsed !in 0L..850L) return
+        if (vm.doublesPulseAtMs <= 0L || elapsed !in 0L..850L) return
         val one = layout.rect(gc.zones.getValue("REEL_1"))
         val two = layout.rect(gc.zones.getValue("REEL_2"))
         val bounds = androidx.compose.ui.geometry.Rect(
@@ -834,8 +849,13 @@ private class SlotReelSoundController(context: Context) {
         if (v > 0f) pool.play(sound, v, v, 1, 0, rate)
     }
 
-    fun release() {
+    fun pause() {
         if (loopStream != 0) pool.stop(loopStream)
+        loopStream = 0
+    }
+
+    fun release() {
+        pause()
         pool.release()
     }
 }
