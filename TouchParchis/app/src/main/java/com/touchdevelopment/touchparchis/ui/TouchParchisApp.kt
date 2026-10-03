@@ -456,7 +456,7 @@ object GameplayRenderer {
         val active = engine.currentColor
         val first = if (vm.reel1.value in 1..6) vm.reel1.value else engine.reel1
         val second = if (vm.reel2.value in 1..6) vm.reel2.value else engine.reel2
-        val scrolling = vm.reelsActive
+        val scrolling = vm.reelAnimationElapsed(now) >= 0L
         for (color in aiColors) {
             val strip = layout.rect(gc.yards.getValue(color).labelStrip)
             val displayW = strip.width * 0.58f
