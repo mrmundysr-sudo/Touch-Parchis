@@ -131,10 +131,18 @@ class GameViewModel(
 
     private var nextAiDelay = 700L
 
+    private companion object {
+        const val REEL_DECEL_MS = 450L
+        const val REEL_BOUNCE_MS = 150L
+    }
+
     // Reel animation timeline.
     private var reelStartAt = 0L
     private var reel1StopAt = 0L
     private var reel2StopAt = 0L
+    private var reelSpinnerColor = ParchisColor.RED
+    var doublesPulseAtMs by mutableStateOf(0L)
+        private set
     private var reelsActive = false
 
     // Opening-spin sequencing.
@@ -243,7 +251,7 @@ class GameViewModel(
             GamePhase.AWAIT_SPIN -> if (now >= aiActAtMs) {
                 doSpin()
                 // Leave time for the reels to settle and the player to read the result.
-                aiActAtMs = now + 1500L
+                aiActAtMs = now + 2200L
                 nextAiDelay = 900 + (rng.nextFloat() * 500).toLong()
             }
             GamePhase.AWAIT_MOVE -> if (now >= aiActAtMs) {
@@ -260,7 +268,7 @@ class GameViewModel(
         val res = e.openingSpin()
         lastRolls = lastRolls + (spinner to (res.r1 to res.r2))
         openingTotals = e.openingTotals.toMap()
-        startReelAnimation(res.r1, res.r2)
+        startReelAnimation(res.r1, res.r2, spinner)
         openingSettling = true
         if (res.starterDecided) message = UiMessage(R.string.starts, res.color)
     }
@@ -305,18 +313,20 @@ class GameViewModel(
         val e = engine ?: return
         val result = e.spin()
         lastRolls = lastRolls + (e.currentColor to (result.r1 to result.r2))
-        startReelAnimation(result.r1, result.r2)
+        startReelAnimation(result.r1, result.r2, e.currentColor)
         choices = null
         spinLocked = true
         message = turnMessage(e.currentColor, R.string.your_turn_choose)
     }
 
-    /** Starts the vertical-scroll reel animation. Reel 1 stops first, reel 2 ~300 ms later. */
-    private fun startReelAnimation(r1: Int, r2: Int) {
+    /** Sets predetermined outcomes first, then animates only their visual reel strips. */
+    private fun startReelAnimation(r1: Int, r2: Int, spinner: ParchisColor) {
         val now = clock()
         reelStartAt = now
-        reel1StopAt = now + 900L
-        reel2StopAt = now + 1250L
+        reelSpinnerColor = spinner
+        val jitter = Math.floorMod(now, 201L) - 100L
+        reel1StopAt = now + 1200L + jitter
+        reel2StopAt = now + 1900L + jitter
         reelsActive = true
         reel1 = ReelViewState(value = r1, phase = ReelPhase.SPINNING)
         reel2 = ReelViewState(value = r2, phase = ReelPhase.SPINNING)
@@ -324,17 +334,16 @@ class GameViewModel(
 
     private fun tickReels(now: Long) {
         if (!reelsActive) return
-        val settleDuration = 260L
 
-        if (reel1.phase == ReelPhase.SPINNING && now >= reel1StopAt) {
+        if (reel1.phase == ReelPhase.SPINNING && now >= reel1StopAt - REEL_DECEL_MS) {
             reel1 = reel1.copy(phase = ReelPhase.SETTLING)
-        } else if (reel1.phase == ReelPhase.SETTLING && now >= reel1StopAt + settleDuration) {
+        } else if (reel1.phase == ReelPhase.SETTLING && now >= reel1StopAt + REEL_BOUNCE_MS) {
             reel1 = reel1.copy(phase = ReelPhase.IDLE)
         }
 
-        if (reel2.phase == ReelPhase.SPINNING && now >= reel2StopAt) {
+        if (reel2.phase == ReelPhase.SPINNING && now >= reel2StopAt - REEL_DECEL_MS) {
             reel2 = reel2.copy(phase = ReelPhase.SETTLING)
-        } else if (reel2.phase == ReelPhase.SETTLING && now >= reel2StopAt + settleDuration) {
+        } else if (reel2.phase == ReelPhase.SETTLING && now >= reel2StopAt + REEL_BOUNCE_MS) {
             reel2 = reel2.copy(phase = ReelPhase.IDLE)
         }
 
@@ -346,6 +355,9 @@ class GameViewModel(
 
     private fun onReelsSettled() {
         val e = engine ?: return
+        if (reelSpinnerColor == humanColor && reel1.value in 1..6 && reel1.value == reel2.value) {
+            doublesPulseAtMs = clock()
+        }
         if (openingInProgress) {
             openingSettling = false
             openingStartPendingAt = clock() +
@@ -550,6 +562,7 @@ class GameViewModel(
         showChoosePrompt = false
         splashPulse = false
         resultAtMs = null
+        doublesPulseAtMs = 0L
         spinLocked = true
         reelsActive = false
         openingInProgress = false
@@ -561,12 +574,17 @@ class GameViewModel(
     /** Elapsed time since the reels started, and whether they are animating. */
     fun reelAnimationElapsed(now: Long): Long = if (reelsActive) now - reelStartAt else -1L
 
+    fun reelStopDurationMs(slot: ReelSlot): Long =
+        (if (slot == ReelSlot.R1) reel1StopAt else reel2StopAt) - reelStartAt
+
+    fun reelStartSeed(): Int = ((reelStartAt xor (reelStartAt ushr 32)).toInt() and 0x7fffffff)
+
     /** Time spent in the individual reel's settling phase, or -1 while it is not settling. */
     fun reelSettleElapsed(now: Long, slot: ReelSlot): Long {
         val state = if (slot == ReelSlot.R1) reel1 else reel2
         if (state.phase != ReelPhase.SETTLING) return -1L
         val stopAt = if (slot == ReelSlot.R1) reel1StopAt else reel2StopAt
-        return (now - stopAt).coerceAtLeast(0L)
+        return (now - (stopAt - 450L)).coerceAtLeast(0L)
     }
 
     /** Message for the active player: the human's prompt, or "X is thinking…". */
