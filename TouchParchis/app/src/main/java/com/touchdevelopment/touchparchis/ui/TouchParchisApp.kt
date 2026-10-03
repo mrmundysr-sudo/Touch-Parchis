@@ -529,7 +529,7 @@ object GameplayRenderer {
             val face = Paint(outer).apply {
                 style = Paint.Style.FILL
                 color = android.graphics.Color.argb(alpha, 0xD9, 0x16, 0x16)
-                setShadowLayer(blurRadius + 2f, 0f, layoutSafeShadow(sizePx), android.graphics.Color.argb(alpha, 0x42, 0x00, 0x00))
+                setShadowLayer(blurRadius + 2f, 0f, sizePx * 0.035f, android.graphics.Color.argb(alpha, 0x42, 0x00, 0x00))
             }
             native.drawText(symbol, cx, y, face)
 
