@@ -337,6 +337,13 @@ private fun handleGameplayTap(vm: GameViewModel, layout: BoardLayout, px: Float,
         }
     }
 
+    // Give the player's yard its explicit entry action before nearby pawn hit targets.
+    // humanEnter() still checks the engine's legal actions, so this cannot bypass the rules.
+    if (layout.hit(gc.zones.getValue("PLAYER_AREA"), px, py)) {
+        vm.humanEnter()
+        return
+    }
+
     val drawPawns = PawnPositioner.compute(gc, vm.rules, e.pawns)
     var best: PawnPositioner.DrawPawn? = null
     var bestDist = Float.MAX_VALUE
