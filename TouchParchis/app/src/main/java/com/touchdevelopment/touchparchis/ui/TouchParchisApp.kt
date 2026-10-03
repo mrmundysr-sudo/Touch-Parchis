@@ -1,7 +1,14 @@
 package com.touchdevelopment.touchparchis.ui
 
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.SoundPool
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -13,6 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +39,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
@@ -46,6 +55,7 @@ import com.touchdevelopment.touchparchis.engine.ReelSlot
 import com.touchdevelopment.touchparchis.engine.RouteIndex
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 private val GOLD = Color(0xFFFFD24A)
 private val LETTERBOX = Color(0xFF4A2A18)
@@ -55,16 +65,34 @@ private val SELECT_GLOW = Color(0xFFFFE07A)
 private val LEGAL_PAWN_GLOW = Color(0x99FFE07A)
 private val SAFE_HIGHLIGHT = Color(0x9957C7FF)
 
+private const val REEL_SYMBOLS_PER_SECOND = 20f
+private const val REEL_ACCEL_MS = 250L
+private const val REEL_DECEL_MS = 450L
+private const val REEL_BOUNCE_MS = 150L
+private const val LEVER_ANIMATION_MS = 300L
+private const val SLOT_SOUND_VOLUME = 0.28f
+
 private val TEXT_LIGHT = 0xFFFFF3D6.toInt()
 private val TEXT_DARK = 0xFF3B1E0E.toInt()
 
 @Composable
 fun TouchParchisApp(viewModel: GameViewModel, onExit: () -> Unit) {
     var showQuit by remember { mutableStateOf(false) }
+    var frameNow by remember { mutableLongStateOf(0L) }
+    val context = LocalContext.current
+    val reelSounds = remember(context) { SlotReelSoundController(context) }
 
-    LaunchedEffect(viewModel.screen) {
+    androidx.compose.runtime.DisposableEffect(reelSounds) {
+        onDispose { reelSounds.release() }
+    }
+
+    LaunchedEffect(viewModel.screen, reelSounds) {
         while (viewModel.screen == Screen.GAMEPLAY) {
-            withFrameNanos { viewModel.tick(it / 1_000_000L) }
+            withFrameNanos { frame ->
+                frameNow = frame / 1_000_000L
+                viewModel.tick(frameNow)
+                reelSounds.update(viewModel, frameNow)
+            }
         }
     }
 
@@ -92,10 +120,52 @@ fun TouchParchisApp(viewModel: GameViewModel, onExit: () -> Unit) {
 
     when (viewModel.screen) {
         Screen.SPLASH -> SplashScreen(viewModel)
-        Screen.GAMEPLAY -> GameplayScreen(viewModel)
+        Screen.GAMEPLAY -> GameplayScreen(viewModel, frameNow)
         Screen.WIN -> ResultScreen(viewModel, R.drawable.screen_win, "PLAY_AGAIN", R.string.play_again)
         Screen.LOSS -> ResultScreen(viewModel, R.drawable.screen_loss, "TRY_AGAIN", R.string.try_again)
     }
+}
+
+// Digit faces are rasterized once per display size, then transformed during reel animation.
+private object ReelDigitSprites {
+    private val cache = android.util.LruCache<Int, Array<Bitmap>>(8)
+
+    fun get(sizePx: Float): Array<Bitmap> {
+        val key = sizePx.roundToInt().coerceAtLeast(1)
+        return cache.get(key) ?: make(key).also { cache.put(key, it) }
+    }
+
+    private fun make(size: Int): Array<Bitmap> = (1..6).map { value ->
+        val w = (size * 1.10f).roundToInt().coerceAtLeast(1)
+        val h = (size * 1.36f).roundToInt().coerceAtLeast(1)
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        val baseline = h / 2f - (Paint().apply { textSize = size.toFloat() }.let { (it.ascent() + it.descent()) / 2f })
+        val base = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
+            textSize = size.toFloat()
+            strokeJoin = Paint.Join.ROUND
+            style = Paint.Style.STROKE
+        }
+        base.strokeWidth = size * 0.17f
+        base.color = android.graphics.Color.rgb(0x3B, 0x12, 0x05)
+        base.setShadowLayer(size * 0.08f, 0f, size * 0.045f, android.graphics.Color.rgb(0x35, 0x0C, 0x00))
+        canvas.drawText(value.toString(), w / 2f, baseline, base)
+        base.clearShadowLayer()
+        base.strokeWidth = size * 0.095f
+        base.color = android.graphics.Color.rgb(0xFF, 0xD2, 0x3B)
+        canvas.drawText(value.toString(), w / 2f, baseline, base)
+        base.style = Paint.Style.FILL
+        base.color = android.graphics.Color.rgb(0xF0, 0x28, 0x1C)
+        base.setShadowLayer(size * 0.035f, 0f, size * 0.02f, android.graphics.Color.rgb(0x70, 0x08, 0x00))
+        canvas.drawText(value.toString(), w / 2f, baseline, base)
+        base.clearShadowLayer()
+        base.textSize = size * 0.74f
+        base.color = android.graphics.Color.argb(90, 0xFF, 0xF5, 0xD2)
+        canvas.drawText(value.toString(), w / 2f - size * 0.018f, baseline - size * 0.035f, base)
+        bitmap
+    }.toTypedArray()
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +243,7 @@ private fun SplashScreen(vm: GameViewModel) {
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun GameplayScreen(vm: GameViewModel) {
+private fun GameplayScreen(vm: GameViewModel, frameNow: Long) {
     val plate = ImageBitmap.imageResource(R.drawable.screen_gameplay)
     val redPawn = ImageBitmap.imageResource(R.drawable.pawn_board_red)
     val yellowPawn = ImageBitmap.imageResource(R.drawable.pawn_board_yellow)
@@ -219,7 +289,7 @@ private fun GameplayScreen(vm: GameViewModel) {
                 notPlayingLabel = notPlayingLabel,
                 spinLabel = spinLabel,
                 messageText = messageText,
-                now = System.currentTimeMillis()
+                now = frameNow
             )
         }
     }
@@ -410,8 +480,9 @@ object GameplayRenderer {
             }
 
             // Slot cabinet, reels, spin button, opening-spin totals, message.
-            drawSlotCabinet(layout, gc)
+            drawSlotCabinet(layout, gc, vm, now)
             drawReels(layout, gc, vm, now)
+            drawDoublesFlourish(layout, gc, vm, now)
             drawAiReelDisplays(layout, gc, vm, now)
             drawSpinButton(layout, gc, vm, spinLabel)
             drawMessage(layout, gc, messageText)
@@ -424,7 +495,7 @@ object GameplayRenderer {
         return NormRect(sc.cx - sc.w / 2f, sc.cy - sc.h / 2f, sc.w, sc.h)
     }
 
-    private fun DrawScope.drawSlotCabinet(layout: BoardLayout, gc: GameplayCoords) {
+    private fun DrawScope.drawSlotCabinet(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         val one = layout.rect(gc.zones.getValue("REEL_1"))
         val two = layout.rect(gc.zones.getValue("REEL_2"))
         val left = minOf(one.left, two.left) - layout.w(0.018f)
@@ -452,12 +523,16 @@ object GameplayRenderer {
             drawRoundRect(Color(0xFFFFE8A0), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)), style = Stroke(width = layout.w(0.004f)))
             drawRoundRect(Color(0x66FFFFFF), Offset(window.left + layout.w(0.008f), window.top + layout.h(0.008f)), Size(window.width - layout.w(0.016f), window.height * 0.12f), CornerRadius(layout.w(0.006f)))
         }
-        drawLine(Color(0xFFFFD85A), Offset((one.right + two.left) / 2f, top + layout.h(0.010f)), Offset((one.right + two.left) / 2f, bottom - layout.h(0.010f)), layout.w(0.010f))
+        val dividerX = (one.right + two.left) / 2f
+        drawLine(Color(0xFF2A1008), Offset(dividerX, top + layout.h(0.010f)), Offset(dividerX, bottom - layout.h(0.010f)), layout.w(0.004f))
         val leverX = right + layout.w(0.026f)
         val leverTop = top + cabinet.height * 0.16f
-        drawLine(Color(0xFF6A2B09), Offset(leverX, leverTop), Offset(leverX, leverTop + layout.h(0.070f)), layout.w(0.012f))
-        drawCircle(Color(0xFF8B0E12), layout.w(0.028f), Offset(leverX, leverTop))
-        drawCircle(Color(0xFFFF4B3E), layout.w(0.017f), Offset(leverX - layout.w(0.006f), leverTop - layout.h(0.006f)))
+        val pullElapsed = vm.reelAnimationElapsed(now)
+        val pull = if (pullElapsed in 0..LEVER_ANIMATION_MS) sin(Math.PI * pullElapsed / LEVER_ANIMATION_MS).toFloat() else 0f
+        val leverShift = layout.h(0.030f) * pull
+        drawLine(Color(0xFF6A2B09), Offset(leverX, leverTop + leverShift), Offset(leverX, leverTop + leverShift + layout.h(0.070f)), layout.w(0.012f))
+        drawCircle(Color(0xFF8B0E12), layout.w(0.028f), Offset(leverX, leverTop + leverShift))
+        drawCircle(Color(0xFFFF4B3E), layout.w(0.017f), Offset(leverX - layout.w(0.006f), leverTop + leverShift - layout.h(0.006f)))
     }
     private fun DrawScope.drawAiReelDisplays(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         val engine = vm.engine ?: return
@@ -504,12 +579,12 @@ object GameplayRenderer {
             val saved = vm.lastRolls[vm.humanColor]
             val first = if (vm.reel1.value in 1..6) vm.reel1 else ReelViewState(value = saved?.first ?: 0)
             val second = if (vm.reel2.value in 1..6) vm.reel2 else ReelViewState(value = saved?.second ?: 0)
-            drawReel(layout, gc.zones.getValue("REEL_1"), first, elapsed, vm.reelSettleElapsed(now, ReelSlot.R1))
-            drawReel(layout, gc.zones.getValue("REEL_2"), second, elapsed, vm.reelSettleElapsed(now, ReelSlot.R2))
+            drawReel(layout, gc.zones.getValue("REEL_1"), first, elapsed, vm.reelSettleElapsed(now, ReelSlot.R1), ReelSlot.R1, vm)
+            drawReel(layout, gc.zones.getValue("REEL_2"), second, elapsed, vm.reelSettleElapsed(now, ReelSlot.R2), ReelSlot.R2, vm)
         } else {
             val saved = vm.lastRolls[vm.humanColor]
-            drawReel(layout, gc.zones.getValue("REEL_1"), ReelViewState(value = saved?.first ?: 0), -1L, -1L)
-            drawReel(layout, gc.zones.getValue("REEL_2"), ReelViewState(value = saved?.second ?: 0), -1L, -1L)
+            drawReel(layout, gc.zones.getValue("REEL_1"), ReelViewState(value = saved?.first ?: 0), -1L, -1L, ReelSlot.R1, vm)
+            drawReel(layout, gc.zones.getValue("REEL_2"), ReelViewState(value = saved?.second ?: 0), -1L, -1L, ReelSlot.R2, vm)
         }
     }
 
@@ -518,56 +593,76 @@ object GameplayRenderer {
         zone: NormRect,
         state: ReelViewState,
         animElapsed: Long,
-        settleElapsed: Long
+        settleElapsed: Long,
+        slot: ReelSlot,
+        vm: GameViewModel
     ) {
         val r = layout.rect(zone)
         val radius = CornerRadius(layout.w(0.010f))
         val digitSize = minOf(r.width * 0.78f, r.height * 0.58f)
         val spacing = r.height * 0.43f
-
         if (state.highlighted) {
             drawRoundRect(Color(0xFFFFF1A8), Offset(r.left, r.top), Size(r.width, r.height), radius, style = Stroke(width = layout.w(0.006f)))
         }
 
         clipRect(r.left, r.top, r.right, r.bottom) {
-            when (state.phase) {
-                ReelPhase.SPINNING -> {
-                    // A continuous six-number strip: symbols move through the
-                    // window every frame, then the chosen result is aligned on stop.
-                    val elapsed = animElapsed.coerceAtLeast(0L)
-                    val stepMs = 54L
-                    val steps = (elapsed / stepMs).toInt()
-                    val fraction = (elapsed % stepMs).toFloat() / stepMs
-                    for (i in -2..2) {
-                        val value = ((state.value - 1 - steps - i + 1200) % 6) + 1
-                        val y = r.centerY + (i + fraction) * spacing
-                        val distance = kotlin.math.abs(i + fraction)
-                        val alpha = (255 - distance * 46f).toInt().coerceIn(90, 255)
-                        drawReelDigit(value, r.centerX, y, digitSize, alpha, if (distance < 0.5f) 0f else 1.5f)
-                    }
+            val target = state.value.coerceIn(1, 6)
+            val duration = vm.reelStopDurationMs(slot).coerceAtLeast(REEL_ACCEL_MS + REEL_DECEL_MS + 1L)
+            val elapsed = when (state.phase) {
+                ReelPhase.IDLE -> duration
+                ReelPhase.SPINNING -> animElapsed.coerceIn(0L, duration - REEL_DECEL_MS)
+                ReelPhase.SETTLING -> (duration - REEL_DECEL_MS + settleElapsed).coerceIn(0L, duration + REEL_BOUNCE_MS)
+            }
+            val areaMs = duration - (2f * (REEL_ACCEL_MS + REEL_DECEL_MS) / 3f)
+            val variation = (vm.reelStartSeed() + if (slot == ReelSlot.R1) 0 else 1).mod(3) - 1
+            val totalSteps = (REEL_SYMBOLS_PER_SECOND * areaMs / 1000f).roundToInt().plus(variation).coerceAtLeast(1)
+            val speed = totalSteps / (areaMs / 1000f)
+            val decelStart = duration - REEL_DECEL_MS
+            val travel = when {
+                elapsed <= REEL_ACCEL_MS -> {
+                    val p = elapsed.toFloat() / REEL_ACCEL_MS
+                    speed * (REEL_ACCEL_MS / 1000f) * p * p * p / 3f
                 }
-                ReelPhase.SETTLING -> {
-                    val t = (settleElapsed.coerceAtLeast(0L) / 260f).coerceIn(0f, 1f)
-                    val easeOut = 1f - (1f - t) * (1f - t) * (1f - t)
-                    // The winning number glides into the center line and gives
-                    // a small damped bounce before it locks in place.
-                    val bounce = (1f - easeOut) * 0.38f - kotlin.math.sin(t * Math.PI * 2.0).toFloat() * 0.035f * (1f - t)
-                    drawReelDigit(((state.value + 4) % 6) + 1, r.centerX, r.centerY - spacing + bounce * spacing, digitSize * 0.88f, 190, 0f)
-                    drawReelDigit(state.value, r.centerX, r.centerY + bounce * spacing, digitSize, 255, 0f)
-                    drawReelDigit((state.value % 6) + 1, r.centerX, r.centerY + spacing + bounce * spacing, digitSize * 0.88f, 190, 0f)
+                elapsed <= decelStart -> speed * (REEL_ACCEL_MS / 3000f + (elapsed - REEL_ACCEL_MS) / 1000f)
+                else -> {
+                    val cruise = speed * (REEL_ACCEL_MS / 3000f + (decelStart - REEL_ACCEL_MS) / 1000f)
+                    val p = ((elapsed - decelStart).toFloat() / REEL_DECEL_MS).coerceIn(0f, 1f)
+                    cruise + speed * (REEL_DECEL_MS / 1000f) * (p - p * p + p * p * p / 3f)
                 }
-                ReelPhase.IDLE -> {
-                    if (state.value in 1..6) drawReelDigit(state.value, r.centerX, r.centerY, digitSize, 255, 0f)
+            }.coerceIn(0f, totalSteps.toFloat())
+            val step = kotlin.math.floor(travel).toInt()
+            val fraction = travel - step
+            val targetIndex = target - 1
+            val firstIndex = Math.floorMod(targetIndex + totalSteps, 6)
+            val centerIndex = Math.floorMod(firstIndex - step, 6)
+            val lockedElapsed = (elapsed - duration).coerceIn(0L, REEL_BOUNCE_MS)
+            val bounceProgress = lockedElapsed.toFloat() / REEL_BOUNCE_MS
+            val bounceOffset = if (state.phase == ReelPhase.SETTLING && lockedElapsed > 0L) {
+                sin(Math.PI * bounceProgress).toFloat() * spacing * 0.09f
+            } else 0f
+            val spinning = state.phase != ReelPhase.IDLE
+            val centerOffset = if (spinning && elapsed < duration) fraction else 0f
+
+            for (row in -2..2) {
+                val index = Math.floorMod(centerIndex + row, 6)
+                val value = index + 1
+                val rowOffset = row + centerOffset
+                val distance = kotlin.math.abs(rowOffset)
+                val edgeFade = (1f - ((distance - 0.72f) / 1.30f).coerceIn(0f, 0.76f))
+                val alpha = (if (distance < 0.42f) 255f else 172f * edgeFade).toInt().coerceIn(24, 255)
+                val scaleY = if (distance < 0.42f) 1f else if (spinning) 1.18f else 0.68f
+                val y = r.centerY + rowOffset * spacing + bounceOffset
+                if (spinning && distance < 1.6f) {
+                    drawReelDigit(value, r.centerX, y + digitSize * 0.10f, digitSize, (alpha * 0.23f).toInt(), 1.35f)
                 }
+                drawReelDigit(value, r.centerX, y, digitSize, alpha, if (spinning) 0f else 0f, scaleY)
             }
 
-            // A soft center payline and top/bottom glass falloff add depth
-            // while keeping every stopped result crisp and readable.
-            drawRect(Color(0x18FFFFFF), Offset(r.left, r.centerY - layout.h(0.006f)), Size(r.width, layout.h(0.012f)))
-            drawRect(
-                Brush.verticalGradient(listOf(Color(0x4D3A1608), Color.Transparent, Color.Transparent, Color(0x663A1608))),
-                Offset(r.left, r.top), Size(r.width, r.height)
-            )
+            // Curved glass falloff, recessed inner edge, center gloss, and a fine payline.
+            drawRect(Brush.verticalGradient(listOf(Color(0x70401A08), Color.Transparent, Color.Transparent, Color(0x80401A08))), Offset(r.left, r.top), Size(r.width, r.height))
+            drawRect(Color(0x22FFFFFF), Offset(r.left, r.centerY - layout.h(0.009f)), Size(r.width, layout.h(0.018f)))
+            drawLine(Color(0x66B12B18), Offset(r.left + layout.w(0.012f), r.centerY), Offset(r.right - layout.w(0.012f), r.centerY), layout.h(0.0018f))
+            drawRoundRect(Color(0x88401A08), Offset(r.left, r.top), Size(r.width, r.height), radius, style = Stroke(width = layout.w(0.006f)))
         }
 
         if (state.dimmed) {
@@ -575,50 +670,45 @@ object GameplayRenderer {
         }
     }
 
-    private fun DrawScope.drawReelDigit(value: Int, cx: Float, cy: Float, sizePx: Float, alpha: Int, blurRadius: Float) {
+    private fun DrawScope.drawReelDigit(
+        value: Int,
+        cx: Float,
+        cy: Float,
+        sizePx: Float,
+        alpha: Int,
+        blurRadius: Float,
+        scaleY: Float = 1f
+    ) {
+        val bitmap = ReelDigitSprites.get(sizePx)[value.coerceIn(1, 6) - 1]
+        val width = bitmap.width.toFloat()
+        val height = bitmap.height.toFloat() * scaleY
         drawIntoCanvas { canvas ->
-            val measure = Paint().apply { textSize = sizePx }
-            val baseline = cy - (measure.descent() + measure.ascent()) / 2f
-            val symbol = value.toString()
-            val native = canvas.nativeCanvas
-
-            // Bright enamel-red numeral, black depth edge, and a strong gold
-            // keyline. Keep the center result fully opaque and legible.
-            val outline = Paint().apply {
-                isAntiAlias = true
-                textAlign = Paint.Align.CENTER
-                typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
-                textSize = sizePx
-                style = Paint.Style.STROKE
-                strokeJoin = Paint.Join.ROUND
-                strokeWidth = sizePx * 0.17f
-                color = android.graphics.Color.argb(alpha, 0x3B, 0x12, 0x05)
-                setShadowLayer(blurRadius + sizePx * 0.035f, 0f, sizePx * 0.045f, android.graphics.Color.argb(alpha, 0x35, 0x0C, 0x00))
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+                this.alpha = alpha.coerceIn(0, 255)
+                if (blurRadius > 0f) setShadowLayer(blurRadius, 0f, 0f, android.graphics.Color.argb(alpha.coerceIn(0,255), 40, 0, 0))
             }
-            native.drawText(symbol, cx, baseline, outline)
+            canvas.nativeCanvas.drawBitmap(bitmap, null, RectF(cx - width / 2f, cy - height / 2f, cx + width / 2f, cy + height / 2f), paint)
+        }
+    }
 
-            val gold = Paint(outline).apply {
-                clearShadowLayer()
-                strokeWidth = sizePx * 0.095f
-                color = android.graphics.Color.argb(alpha, 0xFF, 0xD2, 0x3B)
-            }
-            native.drawText(symbol, cx, baseline, gold)
-
-            val face = Paint(outline).apply {
-                style = Paint.Style.FILL
-                color = android.graphics.Color.argb(alpha, 0xF0, 0x28, 0x1C)
-                setShadowLayer(blurRadius, 0f, sizePx * 0.025f, android.graphics.Color.argb(alpha, 0x70, 0x08, 0x00))
-            }
-            native.drawText(symbol, cx, baseline, face)
-
-            val highlight = Paint().apply {
-                isAntiAlias = true
-                textAlign = Paint.Align.CENTER
-                typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
-                textSize = sizePx * 0.74f
-                color = android.graphics.Color.argb((alpha * 0.34f).toInt(), 0xFF, 0xF5, 0xD2)
-            }
-            native.drawText(symbol, cx - sizePx * 0.018f, baseline - sizePx * 0.035f, highlight)
+    private fun DrawScope.drawDoublesFlourish(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
+        val elapsed = now - vm.doublesPulseAtMs
+        if (elapsed !in 0L..850L) return
+        val one = layout.rect(gc.zones.getValue("REEL_1"))
+        val two = layout.rect(gc.zones.getValue("REEL_2"))
+        val bounds = androidx.compose.ui.geometry.Rect(
+            minOf(one.left, two.left) - layout.w(0.026f),
+            minOf(one.top, two.top) - layout.h(0.022f),
+            maxOf(one.right, two.right) + layout.w(0.026f),
+            maxOf(one.bottom, two.bottom) + layout.h(0.022f)
+        )
+        val pulse = 0.55f + 0.45f * sin(Math.PI * elapsed / 850f).toFloat()
+        drawRoundRect(Color(0xFFFFD24A).copy(alpha = pulse * 0.55f), Offset(bounds.left, bounds.top), Size(bounds.width, bounds.height), CornerRadius(layout.w(0.03f)), style = Stroke(width = layout.w(0.009f)))
+        for (i in 0..3) {
+            val phase = ((elapsed / 35L + i * 23L) % 40L) / 40f
+            val x = if (i % 2 == 0) bounds.left + layout.w(0.012f) else bounds.right - layout.w(0.012f)
+            val y = bounds.top + (bounds.height * phase)
+            drawCircle(Color(0xFFFFF4B0).copy(alpha = (1f - phase) * pulse), layout.w(0.006f + (i % 2) * 0.002f), Offset(x, y))
         }
     }
 
