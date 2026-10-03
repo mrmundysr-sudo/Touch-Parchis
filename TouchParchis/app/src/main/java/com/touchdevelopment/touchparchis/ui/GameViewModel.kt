@@ -79,7 +79,7 @@ class GameViewModel(
     val rules: RulesData,
     val coords: BoardCoords,
     private val rng: RandomSource,
-    private val clock: () -> Long = System::currentTimeMillis
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L }
 ) {
     var screen by mutableStateOf(Screen.SPLASH)
         private set
