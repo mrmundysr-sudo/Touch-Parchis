@@ -648,18 +648,22 @@ object GameplayRenderer {
                     cruise + speed * (REEL_DECEL_MS / 1000f) * (p - p * p + p * p * p / 3f)
                 }
             }.coerceIn(0f, totalSteps.toFloat())
+            // Floating point integration can finish a fraction of a symbol short on some
+            // frames. Once the reel reaches its stop time, pin the center directly to its
+            // predetermined result instead of deriving the final digit from rounded travel.
+            val targetIndex = target - 1
+            val reelLocked = state.phase == ReelPhase.IDLE || elapsed >= duration
             val step = kotlin.math.floor(travel).toInt()
             val fraction = travel - step
-            val targetIndex = target - 1
             val firstIndex = Math.floorMod(targetIndex + totalSteps, 6)
-            val centerIndex = Math.floorMod(firstIndex - step, 6)
+            val centerIndex = if (reelLocked) targetIndex else Math.floorMod(firstIndex - step, 6)
             val lockedElapsed = (elapsed - duration).coerceIn(0L, REEL_BOUNCE_MS)
             val bounceProgress = lockedElapsed.toFloat() / REEL_BOUNCE_MS
             val bounceOffset = if (state.phase == ReelPhase.SETTLING && lockedElapsed > 0L) {
                 sin(Math.PI * bounceProgress).toFloat() * spacing * 0.09f
             } else 0f
             val spinning = state.phase != ReelPhase.IDLE
-            val centerOffset = if (spinning && elapsed < duration) fraction else 0f
+            val centerOffset = if (spinning && !reelLocked) fraction else 0f
 
             for (row in -2..2) {
                 val index = Math.floorMod(centerIndex + row, 6)
