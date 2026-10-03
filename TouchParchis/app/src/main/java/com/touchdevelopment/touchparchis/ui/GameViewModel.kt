@@ -170,6 +170,7 @@ class GameViewModel(
     private fun startGame(opponents: Int) {
         engine = GameEngine(rules, rng, rules.activeSeats(opponents))
         openingTotals = emptyMap()
+        lastRolls = emptyMap()
         animations = emptyList()
         choices = null
         reel1 = ReelViewState()
