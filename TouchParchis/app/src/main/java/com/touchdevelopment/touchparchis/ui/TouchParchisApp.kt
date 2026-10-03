@@ -414,7 +414,6 @@ object GameplayRenderer {
             drawReels(layout, gc, vm, now)
             drawAiReelDisplays(layout, gc, vm, now)
             drawSpinButton(layout, gc, vm, spinLabel)
-            drawOpeningTotals(layout, gc, vm)
             drawMessage(layout, gc, messageText)
         }
     }
@@ -438,8 +437,11 @@ object GameplayRenderer {
         drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFF0A0), Color(0xFFD88A12), Color(0xFF7A3508), Color(0xFFF6C64A))), Offset(left, top), cabinet, radius)
         drawRoundRect(Color(0xFF3A1708), Offset(left + layout.w(0.010f), top + layout.h(0.010f)), Size(cabinet.width - layout.w(0.020f), cabinet.height - layout.h(0.020f)), CornerRadius(layout.w(0.020f)))
         for (window in listOf(one, two)) {
-            drawRoundRect(Brush.verticalGradient(listOf(Color.White, Color(0xFFB9C2CA), Color(0xFF5B6268), Color(0xFFEFF5F8))), Offset(window.left - layout.w(0.007f), window.top - layout.h(0.006f)), Size(window.width + layout.w(0.014f), window.height + layout.h(0.012f)), CornerRadius(layout.w(0.014f)))
-            drawRoundRect(Color(0xFF101217), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)), style = Stroke(width = layout.w(0.004f)))
+            // Premium chrome rim and deep glass interior.
+            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFF7D0), Color(0xFFD99A25), Color(0xFF6E2A08), Color(0xFFFFD45A))), Offset(window.left - layout.w(0.007f), window.top - layout.h(0.006f)), Size(window.width + layout.w(0.014f), window.height + layout.h(0.012f)), CornerRadius(layout.w(0.014f)))
+            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFEAF7FF), Color(0xFF7699AA), Color(0xFF243B4A), Color(0xFF080D14))), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)))
+            drawRoundRect(Color(0xFF0A1118), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)), style = Stroke(width = layout.w(0.004f)))
+            drawRoundRect(Color(0x55FFFFFF), Offset(window.left + layout.w(0.008f), window.top + layout.h(0.008f)), Size(window.width - layout.w(0.016f), window.height * 0.16f), CornerRadius(layout.w(0.006f)))
         }
         drawLine(Color(0xFFFFD85A), Offset((one.right + two.left) / 2f, top + layout.h(0.010f)), Offset((one.right + two.left) / 2f, bottom - layout.h(0.010f)), layout.w(0.010f))
         val leverX = right + layout.w(0.026f)
@@ -479,18 +481,8 @@ object GameplayRenderer {
     }
 
     private fun DrawScope.drawMiniReelDigit(value: Int, cx: Float, cy: Float, sizePx: Float, alpha: Int) {
-        drawIntoCanvas { canvas ->
-            val paint = Paint().apply {
-                isAntiAlias = true
-                textAlign = Paint.Align.CENTER
-                typeface = Typeface.DEFAULT_BOLD
-                textSize = sizePx
-                color = android.graphics.Color.argb(alpha, 0xFF, 0xD3, 0x35)
-                setShadowLayer(sizePx * 0.04f, 0f, sizePx * 0.03f, android.graphics.Color.argb(alpha, 0x00, 0x00, 0x00))
-            }
-            val y = cy - (paint.descent() + paint.ascent()) / 2f
-            canvas.nativeCanvas.drawText(value.toString(), cx, y, paint)
-        }
+        // Use the same premium layered treatment as the main reels; only the scale changes.
+        drawReelDigit(value, cx, cy, sizePx, alpha, 1.5f)
     }
     private fun DrawScope.drawReels(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         val engine = vm.engine ?: return
@@ -522,7 +514,7 @@ object GameplayRenderer {
     ) {
         val r = layout.rect(zone)
         val radius = CornerRadius(layout.w(0.012f))
-        val digitSize = layout.w(0.075f)
+        val digitSize = layout.w(0.098f)
 
         if (state.highlighted) {
             drawRoundRect(GOLD, Offset(r.left, r.top), Size(r.width, r.height), radius, style = Stroke(width = layout.w(0.006f)))
@@ -535,7 +527,7 @@ object GameplayRenderer {
                     val shift = (now % 90L) / 90f
                     for (i in -1..2) {
                         val v = ((state.value + i + 5) % 6) + 1
-                        val cy = r.centerY + (i + shift - 0.5f) * layout.h(0.075f)
+                        val cy = r.centerY + (i + shift - 0.5f) * layout.h(0.082f)
                         drawReelDigit(v, r.centerX, cy, digitSize, 0x66, 6f)
                     }
                 }
@@ -547,7 +539,7 @@ object GameplayRenderer {
                     val shift = (1f - ease) * 1.2f
                     for (i in 0..1) {
                         val v = ((state.value + i + 5) % 6) + 1
-                        val cy = r.centerY + (i + shift - 0.6f) * layout.h(0.075f)
+                        val cy = r.centerY + (i + shift - 0.6f) * layout.h(0.082f)
                         drawReelDigit(v, r.centerX, cy, digitSize, (120 + 135 * ease).toInt(), (6f * (1 - ease)))
                     }
                 }
@@ -595,10 +587,19 @@ object GameplayRenderer {
             native.drawText(symbol, cx, y, face)
 
             val shine = Paint(face).apply {
-                color = android.graphics.Color.argb((alpha * 0.42f).toInt(), 0xFF, 0xB0, 0x90)
-                textSize = sizePx * 0.92f
+                color = android.graphics.Color.argb((alpha * 0.48f).toInt(), 0xFF, 0xF5, 0xD0)
+                textSize = sizePx * 0.90f
             }
-            native.drawText(symbol, cx - sizePx * 0.012f, y - sizePx * 0.018f, shine)
+            native.drawText(symbol, cx - sizePx * 0.012f, y - sizePx * 0.020f, shine)
+
+            val glint = Paint().apply {
+                isAntiAlias = true
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+                textSize = sizePx * 0.54f
+                color = android.graphics.Color.argb((alpha * 0.34f).toInt(), 0xFF, 0xFF, 0xFF)
+            }
+            native.drawText(symbol, cx - sizePx * 0.018f, y - sizePx * 0.045f, glint)
         }
     }
 
