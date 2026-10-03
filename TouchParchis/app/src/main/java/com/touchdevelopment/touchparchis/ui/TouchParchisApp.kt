@@ -454,8 +454,6 @@ object GameplayRenderer {
         val aiColors = engine.activeSeats.filter { it != human }
         if (aiColors.isEmpty()) return
         val active = engine.currentColor
-        val first = if (vm.reel1.value in 1..6) vm.reel1.value else engine.reel1
-        val second = if (vm.reel2.value in 1..6) vm.reel2.value else engine.reel2
         val scrolling = vm.reelAnimationElapsed(now) >= 0L
         for (color in aiColors) {
             val strip = layout.rect(gc.yards.getValue(color).labelStrip)
@@ -465,12 +463,16 @@ object GameplayRenderer {
             val top = strip.centerY - displayH / 2f
             val gap = layout.w(0.008f)
             val cellW = (displayW - gap) / 2f
+            val saved = vm.lastRolls[color] ?: (0 to 0)
+            val first = if (color == active && scrolling) vm.reel1.value else saved.first
+            val second = if (color == active && scrolling) vm.reel2.value else saved.second
             val activeDisplay = color == active && scrolling
             for (i in 0..1) {
                 val x = left + i * (cellW + gap)
                 drawRoundRect(Color(0xDD211108), Offset(x, top), Size(cellW, displayH), CornerRadius(layout.w(0.008f)))
                 drawRoundRect(Color(0xFFFFD24A), Offset(x, top), Size(cellW, displayH), CornerRadius(layout.w(0.008f)), style = Stroke(width = layout.w(0.0025f)))
-                val value = if (activeDisplay) ((if (i == 0) first else second) + ((now / 85L + i) % 6).toInt()) % 6 + 1 else if (i == 0) first else second
+                val base = if (i == 0) first else second
+                val value = if (activeDisplay) ((base + ((now / 85L + i) % 6).toInt()) % 6) + 1 else base
                 drawMiniReelDigit(value, x + cellW / 2f, top + displayH / 2f, displayH * 0.72f, if (activeDisplay) 190 else 255)
             }
         }
