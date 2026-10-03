@@ -439,9 +439,18 @@ object GameplayRenderer {
         for (window in listOf(one, two)) {
             // Premium chrome rim and deep glass interior.
             drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFF7D0), Color(0xFFD99A25), Color(0xFF6E2A08), Color(0xFFFFD45A))), Offset(window.left - layout.w(0.007f), window.top - layout.h(0.006f)), Size(window.width + layout.w(0.014f), window.height + layout.h(0.012f)), CornerRadius(layout.w(0.014f)))
-            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFEAF7FF), Color(0xFF7699AA), Color(0xFF243B4A), Color(0xFF080D14))), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)))
-            drawRoundRect(Color(0xFF0A1118), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)), style = Stroke(width = layout.w(0.004f)))
-            drawRoundRect(Color(0x55FFFFFF), Offset(window.left + layout.w(0.008f), window.top + layout.h(0.008f)), Size(window.width - layout.w(0.016f), window.height * 0.16f), CornerRadius(layout.w(0.006f)))
+            // Bright porcelain reel bed, with darker side rails to make the moving
+            // number strip read as a real vertical reel behind glass.
+            drawRoundRect(
+                Brush.verticalGradient(listOf(Color(0xFFFFF8DF), Color(0xFFFFE9B0), Color(0xFFFFF6D8), Color(0xFFE9C77B))),
+                Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f))
+            )
+            drawRoundRect(
+                Brush.horizontalGradient(listOf(Color(0x663A1608), Color.Transparent, Color.Transparent, Color(0x663A1608))),
+                Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f))
+            )
+            drawRoundRect(Color(0xFFFFE8A0), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)), style = Stroke(width = layout.w(0.004f)))
+            drawRoundRect(Color(0x66FFFFFF), Offset(window.left + layout.w(0.008f), window.top + layout.h(0.008f)), Size(window.width - layout.w(0.016f), window.height * 0.12f), CornerRadius(layout.w(0.006f)))
         }
         drawLine(Color(0xFFFFD85A), Offset((one.right + two.left) / 2f, top + layout.h(0.010f)), Offset((one.right + two.left) / 2f, bottom - layout.h(0.010f)), layout.w(0.010f))
         val leverX = right + layout.w(0.026f)
@@ -490,18 +499,17 @@ object GameplayRenderer {
         val elapsed = vm.reelAnimationElapsed(now)
 
         if (humanTurn) {
-            // The large machine belongs only to the human player. During the
-            // human spin it animates live; afterward it holds the human's roll.
+            // The large machine belongs only to the human. AI rolls remain in
+            // the players' small displays and never replace this saved result.
             val saved = vm.lastRolls[vm.humanColor]
             val first = if (vm.reel1.value in 1..6) vm.reel1 else ReelViewState(value = saved?.first ?: 0)
             val second = if (vm.reel2.value in 1..6) vm.reel2 else ReelViewState(value = saved?.second ?: 0)
-            drawReel(layout, gc.zones.getValue("REEL_1"), first, elapsed, now)
-            drawReel(layout, gc.zones.getValue("REEL_2"), second, elapsed, now)
+            drawReel(layout, gc.zones.getValue("REEL_1"), first, elapsed, vm.reelSettleElapsed(now, ReelSlot.R1))
+            drawReel(layout, gc.zones.getValue("REEL_2"), second, elapsed, vm.reelSettleElapsed(now, ReelSlot.R2))
         } else {
-            // AI rolls never replace the human's large-machine result.
             val saved = vm.lastRolls[vm.humanColor]
-            drawReel(layout, gc.zones.getValue("REEL_1"), ReelViewState(value = saved?.first ?: 0), -1L, now)
-            drawReel(layout, gc.zones.getValue("REEL_2"), ReelViewState(value = saved?.second ?: 0), -1L, now)
+            drawReel(layout, gc.zones.getValue("REEL_1"), ReelViewState(value = saved?.first ?: 0), -1L, -1L)
+            drawReel(layout, gc.zones.getValue("REEL_2"), ReelViewState(value = saved?.second ?: 0), -1L, -1L)
         }
     }
 
@@ -510,43 +518,56 @@ object GameplayRenderer {
         zone: NormRect,
         state: ReelViewState,
         animElapsed: Long,
-        now: Long
+        settleElapsed: Long
     ) {
         val r = layout.rect(zone)
-        val radius = CornerRadius(layout.w(0.012f))
-        val digitSize = layout.w(0.098f)
+        val radius = CornerRadius(layout.w(0.010f))
+        val digitSize = minOf(r.width * 0.78f, r.height * 0.58f)
+        val spacing = r.height * 0.43f
 
         if (state.highlighted) {
-            drawRoundRect(GOLD, Offset(r.left, r.top), Size(r.width, r.height), radius, style = Stroke(width = layout.w(0.006f)))
+            drawRoundRect(Color(0xFFFFF1A8), Offset(r.left, r.top), Size(r.width, r.height), radius, style = Stroke(width = layout.w(0.006f)))
         }
 
-        when (state.phase) {
-            ReelPhase.SPINNING -> {
-                // Fast scrolling digits with a slight blur.
-                clipRect(r.left, r.top, r.right, r.bottom) {
-                    val shift = (now % 90L) / 90f
-                    for (i in -1..2) {
-                        val v = ((state.value + i + 5) % 6) + 1
-                        val cy = r.centerY + (i + shift - 0.5f) * layout.h(0.082f)
-                        drawReelDigit(v, r.centerX, cy, digitSize, 0x66, 6f)
+        clipRect(r.left, r.top, r.right, r.bottom) {
+            when (state.phase) {
+                ReelPhase.SPINNING -> {
+                    // A continuous six-number strip: symbols move through the
+                    // window every frame, then the chosen result is aligned on stop.
+                    val elapsed = animElapsed.coerceAtLeast(0L)
+                    val stepMs = 54L
+                    val steps = (elapsed / stepMs).toInt()
+                    val fraction = (elapsed % stepMs).toFloat() / stepMs
+                    for (i in -2..2) {
+                        val value = ((state.value - 1 - steps - i + 1200) % 6) + 1
+                        val y = r.centerY + (i + fraction) * spacing
+                        val distance = kotlin.math.abs(i + fraction)
+                        val alpha = (255 - distance * 46f).toInt().coerceIn(90, 255)
+                        drawReelDigit(value, r.centerX, y, digitSize, alpha, if (distance < 0.5f) 0f else 1.5f)
                     }
                 }
-            }
-            ReelPhase.SETTLING -> {
-                clipRect(r.left, r.top, r.right, r.bottom) {
-                    val t = ((animElapsed - 600L).coerceAtLeast(0L) / 400f).coerceAtMost(1f)
-                    val ease = t * t * (3 - 2 * t)
-                    val shift = (1f - ease) * 1.2f
-                    for (i in 0..1) {
-                        val v = ((state.value + i + 5) % 6) + 1
-                        val cy = r.centerY + (i + shift - 0.6f) * layout.h(0.082f)
-                        drawReelDigit(v, r.centerX, cy, digitSize, (120 + 135 * ease).toInt(), (6f * (1 - ease)))
-                    }
+                ReelPhase.SETTLING -> {
+                    val t = (settleElapsed.coerceAtLeast(0L) / 260f).coerceIn(0f, 1f)
+                    val easeOut = 1f - (1f - t) * (1f - t) * (1f - t)
+                    // The winning number glides into the center line and gives
+                    // a small damped bounce before it locks in place.
+                    val bounce = (1f - easeOut) * 0.38f - kotlin.math.sin(t * Math.PI * 2.0).toFloat() * 0.035f * (1f - t)
+                    drawReelDigit(((state.value + 4) % 6) + 1, r.centerX, r.centerY - spacing + bounce * spacing, digitSize * 0.88f, 190, 0f)
+                    drawReelDigit(state.value, r.centerX, r.centerY + bounce * spacing, digitSize, 255, 0f)
+                    drawReelDigit((state.value % 6) + 1, r.centerX, r.centerY + spacing + bounce * spacing, digitSize * 0.88f, 190, 0f)
+                }
+                ReelPhase.IDLE -> {
+                    if (state.value in 1..6) drawReelDigit(state.value, r.centerX, r.centerY, digitSize, 255, 0f)
                 }
             }
-            ReelPhase.IDLE -> {
-                if (state.value in 1..6) drawReelDigit(state.value, r.centerX, r.centerY, digitSize, 255, 0f)
-            }
+
+            // A soft center payline and top/bottom glass falloff add depth
+            // while keeping every stopped result crisp and readable.
+            drawRect(Color(0x18FFFFFF), Offset(r.left, r.centerY - layout.h(0.006f)), Size(r.width, layout.h(0.012f)))
+            drawRect(
+                Brush.verticalGradient(listOf(Color(0x4D3A1608), Color.Transparent, Color.Transparent, Color(0x663A1608))),
+                Offset(r.left, r.top), Size(r.width, r.height)
+            )
         }
 
         if (state.dimmed) {
@@ -556,50 +577,48 @@ object GameplayRenderer {
 
     private fun DrawScope.drawReelDigit(value: Int, cx: Float, cy: Float, sizePx: Float, alpha: Int, blurRadius: Float) {
         drawIntoCanvas { canvas ->
-            val y = cy - (Paint().apply { textSize = sizePx }.descent() + Paint().apply { textSize = sizePx }.ascent()) / 2f
+            val measure = Paint().apply { textSize = sizePx }
+            val baseline = cy - (measure.descent() + measure.ascent()) / 2f
             val symbol = value.toString()
             val native = canvas.nativeCanvas
 
-            // Classic slot-machine number treatment: black outer edge, gold keyline,
-            // glossy red face, and a soft shadow. This applies to 1–6 only.
-            val outer = Paint().apply {
+            // Bright enamel-red numeral, black depth edge, and a strong gold
+            // keyline. Keep the center result fully opaque and legible.
+            val outline = Paint().apply {
                 isAntiAlias = true
                 textAlign = Paint.Align.CENTER
-                typeface = Typeface.DEFAULT_BOLD
+                typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
                 textSize = sizePx
                 style = Paint.Style.STROKE
-                strokeWidth = sizePx * 0.16f
-                color = android.graphics.Color.argb(alpha, 0x18, 0x0A, 0x04)
+                strokeJoin = Paint.Join.ROUND
+                strokeWidth = sizePx * 0.17f
+                color = android.graphics.Color.argb(alpha, 0x3B, 0x12, 0x05)
+                setShadowLayer(blurRadius + sizePx * 0.035f, 0f, sizePx * 0.045f, android.graphics.Color.argb(alpha, 0x35, 0x0C, 0x00))
             }
-            native.drawText(symbol, cx, y, outer)
+            native.drawText(symbol, cx, baseline, outline)
 
-            val gold = Paint(outer).apply {
+            val gold = Paint(outline).apply {
+                clearShadowLayer()
                 strokeWidth = sizePx * 0.095f
-                color = android.graphics.Color.argb(alpha, 0xFF, 0xD3, 0x35)
+                color = android.graphics.Color.argb(alpha, 0xFF, 0xD2, 0x3B)
             }
-            native.drawText(symbol, cx, y, gold)
+            native.drawText(symbol, cx, baseline, gold)
 
-            val face = Paint(outer).apply {
+            val face = Paint(outline).apply {
                 style = Paint.Style.FILL
-                color = android.graphics.Color.argb(alpha, 0xD9, 0x16, 0x16)
-                setShadowLayer(blurRadius + 2f, 0f, sizePx * 0.035f, android.graphics.Color.argb(alpha, 0x42, 0x00, 0x00))
+                color = android.graphics.Color.argb(alpha, 0xF0, 0x28, 0x1C)
+                setShadowLayer(blurRadius, 0f, sizePx * 0.025f, android.graphics.Color.argb(alpha, 0x70, 0x08, 0x00))
             }
-            native.drawText(symbol, cx, y, face)
+            native.drawText(symbol, cx, baseline, face)
 
-            val shine = Paint(face).apply {
-                color = android.graphics.Color.argb((alpha * 0.48f).toInt(), 0xFF, 0xF5, 0xD0)
-                textSize = sizePx * 0.90f
-            }
-            native.drawText(symbol, cx - sizePx * 0.012f, y - sizePx * 0.020f, shine)
-
-            val glint = Paint().apply {
+            val highlight = Paint().apply {
                 isAntiAlias = true
                 textAlign = Paint.Align.CENTER
-                typeface = Typeface.DEFAULT_BOLD
-                textSize = sizePx * 0.54f
-                color = android.graphics.Color.argb((alpha * 0.34f).toInt(), 0xFF, 0xFF, 0xFF)
+                typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
+                textSize = sizePx * 0.74f
+                color = android.graphics.Color.argb((alpha * 0.34f).toInt(), 0xFF, 0xF5, 0xD2)
             }
-            native.drawText(symbol, cx - sizePx * 0.018f, y - sizePx * 0.045f, glint)
+            native.drawText(symbol, cx - sizePx * 0.018f, baseline - sizePx * 0.035f, highlight)
         }
     }
 
