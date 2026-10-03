@@ -8,7 +8,6 @@ import android.graphics.Typeface
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.SoundPool
-import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -73,7 +72,7 @@ private const val REEL_ACCEL_MS = 250L
 private const val REEL_DECEL_MS = 450L
 private const val REEL_BOUNCE_MS = 150L
 private const val LEVER_ANIMATION_MS = 300L
-private const val SLOT_SOUND_VOLUME = 0.28f
+private const val SLOT_SOUND_VOLUME = 0.68f
 
 private val TEXT_LIGHT = 0xFFFFF3D6.toInt()
 private val TEXT_DARK = 0xFF3B1E0E.toInt()
@@ -541,7 +540,7 @@ object GameplayRenderer {
         drawLine(Color(0xFF2A1008), Offset(dividerX, top + layout.h(0.010f)), Offset(dividerX, bottom - layout.h(0.010f)), layout.w(0.004f))
         val leverX = right + layout.w(0.026f)
         val leverTop = top + cabinet.height * 0.16f
-        val pullElapsed = vm.reelAnimationElapsed(now)
+        val pullElapsed = if (vm.isHumanReelSpinActive()) vm.reelAnimationElapsed(now) else -1L
         val pull = if (pullElapsed in 0..LEVER_ANIMATION_MS) sin(Math.PI * pullElapsed / LEVER_ANIMATION_MS).toFloat() else 0f
         val leverShift = layout.h(0.030f) * pull
         drawLine(Color(0xFF6A2B09), Offset(leverX, leverTop + leverShift), Offset(leverX, leverTop + leverShift + layout.h(0.070f)), layout.w(0.012f))
@@ -553,8 +552,6 @@ object GameplayRenderer {
         val human = vm.humanColor
         val aiColors = engine.activeSeats.filter { it != human }
         if (aiColors.isEmpty()) return
-        val active = engine.currentColor
-        val scrolling = vm.reelAnimationElapsed(now) >= 0L
         for (color in aiColors) {
             val strip = layout.rect(gc.yards.getValue(color).labelStrip)
             val displayW = strip.width * 0.58f
@@ -563,17 +560,15 @@ object GameplayRenderer {
             val top = strip.centerY - displayH / 2f
             val gap = layout.w(0.008f)
             val cellW = (displayW - gap) / 2f
+            // AI displays show the actual last completed roll and hold it until that
+            // player rolls again. Only the human's large cabinet animates.
             val saved = vm.lastRolls[color] ?: (0 to 0)
-            val first = if (color == active && scrolling) vm.reel1.value else saved.first
-            val second = if (color == active && scrolling) vm.reel2.value else saved.second
-            val activeDisplay = color == active && scrolling
             for (i in 0..1) {
                 val x = left + i * (cellW + gap)
                 drawRoundRect(Color(0xDD211108), Offset(x, top), Size(cellW, displayH), CornerRadius(layout.w(0.008f)))
                 drawRoundRect(Color(0xFFFFD24A), Offset(x, top), Size(cellW, displayH), CornerRadius(layout.w(0.008f)), style = Stroke(width = layout.w(0.0025f)))
-                val base = if (i == 0) first else second
-                val value = if (activeDisplay) ((base + ((now / 85L + i) % 6).toInt()) % 6) + 1 else base
-                drawMiniReelDigit(value, x + cellW / 2f, top + displayH / 2f, displayH * 0.72f, if (activeDisplay) 190 else 255)
+                val value = if (i == 0) saved.first else saved.second
+                if (value in 1..6) drawMiniReelDigit(value, x + cellW / 2f, top + displayH / 2f, displayH * 0.72f, 255)
             }
         }
     }
@@ -584,19 +579,20 @@ object GameplayRenderer {
     }
     private fun DrawScope.drawReels(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         val engine = vm.engine ?: return
-        val humanTurn = engine.currentColor == vm.humanColor
-        val elapsed = vm.reelAnimationElapsed(now)
+        val saved = vm.lastRolls[vm.humanColor]
+        val humanSpin = vm.isHumanReelSpinActive()
+        val showingHumanRoll = humanSpin || (
+            engine.currentColor == vm.humanColor &&
+                engine.phase == com.touchdevelopment.touchparchis.engine.GamePhase.AWAIT_MOVE
+            )
 
-        if (humanTurn) {
-            // The large machine belongs only to the human. AI rolls remain in
-            // the players' small displays and never replace this saved result.
-            val saved = vm.lastRolls[vm.humanColor]
+        if (showingHumanRoll) {
             val first = if (vm.reel1.value in 1..6) vm.reel1 else ReelViewState(value = saved?.first ?: 0)
             val second = if (vm.reel2.value in 1..6) vm.reel2 else ReelViewState(value = saved?.second ?: 0)
+            val elapsed = if (humanSpin) vm.reelAnimationElapsed(now) else -1L
             drawReel(layout, gc.zones.getValue("REEL_1"), first, elapsed, vm.reelSettleElapsed(now, ReelSlot.R1), ReelSlot.R1, vm)
             drawReel(layout, gc.zones.getValue("REEL_2"), second, elapsed, vm.reelSettleElapsed(now, ReelSlot.R2), ReelSlot.R2, vm)
         } else {
-            val saved = vm.lastRolls[vm.humanColor]
             drawReel(layout, gc.zones.getValue("REEL_1"), ReelViewState(value = saved?.first ?: 0), -1L, -1L, ReelSlot.R1, vm)
             drawReel(layout, gc.zones.getValue("REEL_2"), ReelViewState(value = saved?.second ?: 0), -1L, -1L, ReelSlot.R2, vm)
         }
@@ -764,6 +760,18 @@ private class SlotReelSoundController(context: Context) {
                 .build()
         )
         .build()
+    private val loadedSamples = mutableSetOf<Int>()
+    private val pendingSounds = mutableMapOf<Int, Float>()
+
+    init {
+        pool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0) {
+                loadedSamples += sampleId
+                pendingSounds.remove(sampleId)?.let { playLoaded(sampleId, it) }
+            }
+        }
+    }
+
     private val lever = pool.load(context, R.raw.slot_lever, 1)
     private val loop = pool.load(context, R.raw.slot_loop, 1)
     private val tick = pool.load(context, R.raw.slot_tick, 1)
@@ -779,7 +787,7 @@ private class SlotReelSoundController(context: Context) {
     fun update(vm: GameViewModel, now: Long) {
         val oneActive = vm.reel1.phase != ReelPhase.IDLE
         val twoActive = vm.reel2.phase != ReelPhase.IDLE
-        val anyActive = oneActive || twoActive
+        val anyActive = vm.isHumanReelSpinActive() && (oneActive || twoActive)
         if (anyActive && !active) {
             active = true
             lastTickAt[0] = now
@@ -789,8 +797,9 @@ private class SlotReelSoundController(context: Context) {
             play(lever)
         }
         if (anyActive) {
-            if (loopStream == 0) {
-                loopStream = pool.play(loop, volume(), volume(), 1, -1, 0.72f)
+            if (loopStream == 0 && loadedSamples.contains(loop)) {
+                val v = volume()
+                if (v > 0f) loopStream = pool.play(loop, v, v, 1, -1, 0.72f)
             }
             if (loopStream != 0) pool.setRate(loopStream, reelPitch(vm, now))
             for (i in 0..1) {
@@ -840,11 +849,20 @@ private class SlotReelSoundController(context: Context) {
 
     private fun volume(): Float {
         val mediaMuted = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) <= 0
-        val silenced = Build.VERSION.SDK_INT >= 23 && audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT
-        return if (mediaMuted || silenced) 0f else SLOT_SOUND_VOLUME
+        return if (mediaMuted) 0f else SLOT_SOUND_VOLUME
     }
 
     private fun play(sound: Int, rate: Float = 1f) {
+        val v = volume()
+        if (v <= 0f) return
+        if (!loadedSamples.contains(sound)) {
+            pendingSounds[sound] = rate
+            return
+        }
+        playLoaded(sound, rate)
+    }
+
+    private fun playLoaded(sound: Int, rate: Float) {
         val v = volume()
         if (v > 0f) pool.play(sound, v, v, 1, 0, rate)
     }
