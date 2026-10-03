@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Solid color used for any letterbox bars outside the aspect-fit plate. -->
+    <color name="plate_letterbox">#4A2A18</color>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">Touch Parchís</string>
+
+    <!-- Splash -->
+    <string name="splash_choose_prompt">Choose 1, 2, or 3 opponents</string>
+    <string name="splash_play">Touch to Play</string>
+
+    <!-- Gameplay -->
+    <string name="spin">SPIN</string>
+    <string name="not_playing">Not Playing</string>
+    <string name="opening_spin_caption">Spin to see who starts</string>
+    <string name="your_turn_spin">Your turn: tap Spin</string>
+    <string name="your_turn_choose">Your turn: choose a move</string>
+    <string name="doubles_spin_again">Doubles! Tap Spin again</string>
+    <string name="thinking">%1$s is thinking…</string>
+    <string name="starts">%1$s starts</string>
+    <string name="no_moves">No moves</string>
+    <string name="captured">Captured!</string>
+
+    <!-- Result screens -->
+    <string name="play_again">Play Again</string>
+    <string name="try_again">Try Again</string>
+
+    <!-- Quit dialog -->
+    <string name="quit_title">Quit to start?</string>
+    <string name="quit_message">Your current game will be lost.</string>
+    <string name="quit_yes">Quit</string>
+    <string name="quit_no">Keep playing</string>
+
+    <!-- Reserved side-view selector sprites: intentionally unused in V1 (RULES/build instructions). -->
+    <string name="color_red" tools:ignore="UnusedResources">Red</string>
+    <string name="color_yellow" tools:ignore="UnusedResources">Yellow</string>
+    <string name="color_green" tools:ignore="UnusedResources">Green</string>
+    <string name="color_blue" tools:ignore="UnusedResources">Blue</string>
+</resources>

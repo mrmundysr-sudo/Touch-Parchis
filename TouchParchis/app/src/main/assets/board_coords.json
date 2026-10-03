@@ -1,0 +1,1197 @@
+{
+ "version": 1,
+ "units": "All x, y, w, h, cx, cy values are FRACTIONS (0.0-1.0) of the clean plate's own width and height. x,y = top-left corner of a rect; cx,cy = center. Never use pixels.",
+ "important": "The clean gameplay plate is 691x1536 px (not 720x1600). Fractions make the size irrelevant.",
+ "provenance": {
+  "squares": "measured from grid lines on the clean gameplay plate",
+  "zones": "measured from the Toolkit markups",
+  "yard_slots_X1_to_X16": "Confirmed against the included touch-toolkit-portrait-8-pawn-starts.png markup; each yard has four centered 2x2 starting slots",
+  "message_area": "Code-drawn message zone measured from the gameplay layout"
+ },
+ "screens": {
+  "splash": {
+   "plate_resource": "screen_splash",
+   "plate_px": [
+    720,
+    1600
+   ],
+   "zones": {
+    "OPP_1": {
+     "x": 0.10854,
+     "y": 0.60156,
+     "w": 0.23734,
+     "h": 0.08919
+    },
+    "OPP_2": {
+     "x": 0.37482,
+     "y": 0.64583,
+     "w": 0.24023,
+     "h": 0.08919
+    },
+    "OPP_3": {
+     "x": 0.65412,
+     "y": 0.60872,
+     "w": 0.23878,
+     "h": 0.09049
+    },
+    "PLAY": {
+     "x": 0.11288,
+     "y": 0.82292,
+     "w": 0.77424,
+     "h": 0.13216
+    }
+   }
+  },
+  "gameplay": {
+   "plate_resource": "screen_gameplay",
+   "plate_px": [
+    691,
+    1536
+   ],
+   "squares": {
+    "6": {
+     "cx": 0.57091,
+     "cy": 0.66569,
+     "w": 0.06802,
+     "h": 0.01888,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "7": {
+     "cx": 0.57091,
+     "cy": 0.64714,
+     "w": 0.06802,
+     "h": 0.01823,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "8": {
+     "cx": 0.57091,
+     "cy": 0.62793,
+     "w": 0.06802,
+     "h": 0.02018,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "9": {
+     "cx": 0.57091,
+     "cy": 0.60775,
+     "w": 0.06802,
+     "h": 0.02018,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "10": {
+     "cx": 0.57091,
+     "cy": 0.58626,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": true,
+     "start_of": "red"
+    },
+    "11": {
+     "cx": 0.57091,
+     "cy": 0.5638,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "12": {
+     "cx": 0.57091,
+     "cy": 0.54102,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "13": {
+     "cx": 0.57091,
+     "cy": 0.51758,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "14": {
+     "cx": 0.62084,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "15": {
+     "cx": 0.66425,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "16": {
+     "cx": 0.70839,
+     "cy": 0.48893,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "17": {
+     "cx": 0.75253,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": true
+    },
+    "18": {
+     "cx": 0.79667,
+     "cy": 0.48893,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "19": {
+     "cx": 0.84081,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "20": {
+     "cx": 0.88495,
+     "cy": 0.48893,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "21": {
+     "cx": 0.92981,
+     "cy": 0.48893,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "22": {
+     "cx": 0.92981,
+     "cy": 0.44987,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": true
+    },
+    "23": {
+     "cx": 0.92981,
+     "cy": 0.41178,
+     "w": 0.04486,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "24": {
+     "cx": 0.88495,
+     "cy": 0.41178,
+     "w": 0.04486,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "25": {
+     "cx": 0.84081,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "26": {
+     "cx": 0.79667,
+     "cy": 0.41178,
+     "w": 0.04486,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "27": {
+     "cx": 0.75253,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": true,
+     "start_of": "yellow"
+    },
+    "28": {
+     "cx": 0.70839,
+     "cy": 0.41178,
+     "w": 0.04486,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "29": {
+     "cx": 0.66425,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "30": {
+     "cx": 0.62084,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "31": {
+     "cx": 0.57091,
+     "cy": 0.40951,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "32": {
+     "cx": 0.57091,
+     "cy": 0.38672,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "33": {
+     "cx": 0.57091,
+     "cy": 0.36426,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "34": {
+     "cx": 0.57091,
+     "cy": 0.34147,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": true
+    },
+    "35": {
+     "cx": 0.57091,
+     "cy": 0.31868,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "36": {
+     "cx": 0.57091,
+     "cy": 0.29622,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "37": {
+     "cx": 0.57091,
+     "cy": 0.27409,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "38": {
+     "cx": 0.57091,
+     "cy": 0.2513,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "39": {
+     "cx": 0.49855,
+     "cy": 0.2513,
+     "w": 0.0767,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": true
+    },
+    "40": {
+     "cx": 0.42619,
+     "cy": 0.2513,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "41": {
+     "cx": 0.42619,
+     "cy": 0.27409,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "42": {
+     "cx": 0.42619,
+     "cy": 0.29622,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "43": {
+     "cx": 0.42619,
+     "cy": 0.31868,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "44": {
+     "cx": 0.42619,
+     "cy": 0.34147,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": true,
+     "start_of": "green"
+    },
+    "45": {
+     "cx": 0.42619,
+     "cy": 0.36426,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "46": {
+     "cx": 0.42619,
+     "cy": 0.38672,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "47": {
+     "cx": 0.42619,
+     "cy": 0.40951,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "48": {
+     "cx": 0.37627,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "49": {
+     "cx": 0.33285,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "50": {
+     "cx": 0.28944,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "51": {
+     "cx": 0.24602,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": true
+    },
+    "52": {
+     "cx": 0.2026,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "53": {
+     "cx": 0.15919,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "54": {
+     "cx": 0.11577,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "55": {
+     "cx": 0.07236,
+     "cy": 0.41178,
+     "w": 0.04342,
+     "h": 0.03711,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "56": {
+     "cx": 0.07236,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": true
+    },
+    "57": {
+     "cx": 0.07236,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "58": {
+     "cx": 0.11577,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "59": {
+     "cx": 0.15919,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "60": {
+     "cx": 0.2026,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "61": {
+     "cx": 0.24602,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": true,
+     "start_of": "blue"
+    },
+    "62": {
+     "cx": 0.28944,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "63": {
+     "cx": 0.33285,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "64": {
+     "cx": 0.37627,
+     "cy": 0.48893,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "track",
+     "safe": false
+    },
+    "65": {
+     "cx": 0.42619,
+     "cy": 0.51758,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "66": {
+     "cx": 0.42619,
+     "cy": 0.54102,
+     "w": 0.06802,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "67": {
+     "cx": 0.42619,
+     "cy": 0.5638,
+     "w": 0.06802,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "68": {
+     "cx": 0.42619,
+     "cy": 0.58626,
+     "w": 0.06802,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": true
+    },
+    "69": {
+     "cx": 0.42619,
+     "cy": 0.60775,
+     "w": 0.06802,
+     "h": 0.02018,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "70": {
+     "cx": 0.42619,
+     "cy": 0.62793,
+     "w": 0.06802,
+     "h": 0.02018,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "71": {
+     "cx": 0.42619,
+     "cy": 0.64714,
+     "w": 0.06802,
+     "h": 0.01823,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "72": {
+     "cx": 0.42619,
+     "cy": 0.66569,
+     "w": 0.06802,
+     "h": 0.01888,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": false
+    },
+    "73": {
+     "cx": 0.49855,
+     "cy": 0.66569,
+     "w": 0.0767,
+     "h": 0.01888,
+     "long_axis": "x",
+     "kind": "track",
+     "safe": true
+    },
+    "74": {
+     "cx": 0.49855,
+     "cy": 0.64714,
+     "w": 0.0767,
+     "h": 0.01823,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "75": {
+     "cx": 0.49855,
+     "cy": 0.62793,
+     "w": 0.0767,
+     "h": 0.02018,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "76": {
+     "cx": 0.49855,
+     "cy": 0.60775,
+     "w": 0.0767,
+     "h": 0.02018,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "77": {
+     "cx": 0.49855,
+     "cy": 0.58626,
+     "w": 0.0767,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "78": {
+     "cx": 0.49855,
+     "cy": 0.5638,
+     "w": 0.0767,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "79": {
+     "cx": 0.49855,
+     "cy": 0.54102,
+     "w": 0.0767,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "80": {
+     "cx": 0.49855,
+     "cy": 0.51758,
+     "w": 0.0767,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "red"
+    },
+    "81": {
+     "cx": 0.88495,
+     "cy": 0.44987,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "82": {
+     "cx": 0.84081,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "83": {
+     "cx": 0.79667,
+     "cy": 0.44987,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "84": {
+     "cx": 0.75253,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "85": {
+     "cx": 0.70839,
+     "cy": 0.44987,
+     "w": 0.04486,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "86": {
+     "cx": 0.66425,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "87": {
+     "cx": 0.62084,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "yellow"
+    },
+    "88": {
+     "cx": 0.49855,
+     "cy": 0.27409,
+     "w": 0.0767,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "89": {
+     "cx": 0.49855,
+     "cy": 0.29622,
+     "w": 0.0767,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "90": {
+     "cx": 0.49855,
+     "cy": 0.31868,
+     "w": 0.0767,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "91": {
+     "cx": 0.49855,
+     "cy": 0.34147,
+     "w": 0.0767,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "92": {
+     "cx": 0.49855,
+     "cy": 0.36426,
+     "w": 0.0767,
+     "h": 0.02279,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "93": {
+     "cx": 0.49855,
+     "cy": 0.38672,
+     "w": 0.0767,
+     "h": 0.02214,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "94": {
+     "cx": 0.49855,
+     "cy": 0.40951,
+     "w": 0.0767,
+     "h": 0.02344,
+     "long_axis": "x",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "green"
+    },
+    "95": {
+     "cx": 0.11577,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    },
+    "96": {
+     "cx": 0.15919,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    },
+    "97": {
+     "cx": 0.2026,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    },
+    "98": {
+     "cx": 0.24602,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    },
+    "99": {
+     "cx": 0.28944,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    },
+    "100": {
+     "cx": 0.33285,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    },
+    "101": {
+     "cx": 0.37627,
+     "cy": 0.44987,
+     "w": 0.04342,
+     "h": 0.03906,
+     "long_axis": "y",
+     "kind": "stretch",
+     "safe": true,
+     "stretch_of": "blue"
+    }
+   },
+   "home_box_5": {
+    "rect": {
+     "x": 0.41679,
+     "y": 0.42253,
+     "w": 0.16932,
+     "h": 0.08203
+    },
+    "cx": 0.50145,
+    "cy": 0.46354,
+    "finished_slots": [
+     {
+      "cx": 0.4642,
+      "cy": 0.44549
+     },
+     {
+      "cx": 0.5387,
+      "cy": 0.44549
+     },
+     {
+      "cx": 0.4642,
+      "cy": 0.48159
+     },
+     {
+      "cx": 0.5387,
+      "cy": 0.48159
+     }
+    ]
+   },
+   "yards": {
+    "red": {
+     "rect": {
+      "x": 0.62373,
+      "y": 0.52344,
+      "w": 0.31983,
+      "h": 0.14453
+     },
+     "slots": [
+      {
+       "id": "X1",
+       "cx": 0.71009,
+       "cy": 0.56246
+      },
+      {
+       "id": "X2",
+       "cx": 0.85721,
+       "cy": 0.56246
+      },
+      {
+       "id": "X3",
+       "cx": 0.71009,
+       "cy": 0.62895
+      },
+      {
+       "id": "X4",
+       "cx": 0.85721,
+       "cy": 0.62895
+      }
+     ],
+     "label_strip": {
+      "x": 0.62373,
+      "y": 0.64193,
+      "w": 0.31983,
+      "h": 0.02604
+     },
+     "pawn_color": "red"
+    },
+    "yellow": {
+     "rect": {
+      "x": 0.62373,
+      "y": 0.24674,
+      "w": 0.31983,
+      "h": 0.14453
+     },
+     "slots": [
+      {
+       "id": "X5",
+       "cx": 0.71009,
+       "cy": 0.28577
+      },
+      {
+       "id": "X6",
+       "cx": 0.85721,
+       "cy": 0.28577
+      },
+      {
+       "id": "X7",
+       "cx": 0.71009,
+       "cy": 0.35225
+      },
+      {
+       "id": "X8",
+       "cx": 0.85721,
+       "cy": 0.35225
+      }
+     ],
+     "label_strip": {
+      "x": 0.62373,
+      "y": 0.24674,
+      "w": 0.31983,
+      "h": 0.02604
+     },
+     "pawn_color": "yellow"
+    },
+    "green": {
+     "rect": {
+      "x": 0.05355,
+      "y": 0.24674,
+      "w": 0.31983,
+      "h": 0.14453
+     },
+     "slots": [
+      {
+       "id": "X9",
+       "cx": 0.1399,
+       "cy": 0.28577
+      },
+      {
+       "id": "X10",
+       "cx": 0.28702,
+       "cy": 0.28577
+      },
+      {
+       "id": "X11",
+       "cx": 0.1399,
+       "cy": 0.35225
+      },
+      {
+       "id": "X12",
+       "cx": 0.28702,
+       "cy": 0.35225
+      }
+     ],
+     "label_strip": {
+      "x": 0.05355,
+      "y": 0.24674,
+      "w": 0.31983,
+      "h": 0.02604
+     },
+     "pawn_color": "green"
+    },
+    "blue": {
+     "rect": {
+      "x": 0.05355,
+      "y": 0.52344,
+      "w": 0.31983,
+      "h": 0.14453
+     },
+     "slots": [
+      {
+       "id": "X13",
+       "cx": 0.1399,
+       "cy": 0.56246
+      },
+      {
+       "id": "X14",
+       "cx": 0.28702,
+       "cy": 0.56246
+      },
+      {
+       "id": "X15",
+       "cx": 0.1399,
+       "cy": 0.62895
+      },
+      {
+       "id": "X16",
+       "cx": 0.28702,
+       "cy": 0.62895
+      }
+     ],
+     "label_strip": {
+      "x": 0.05355,
+      "y": 0.64193,
+      "w": 0.31983,
+      "h": 0.02604
+     },
+     "pawn_color": "blue"
+    }
+   },
+   "zones": {
+    "REEL_1": {
+     "x": 0.26918,
+     "y": 0.72982,
+     "w": 0.20116,
+     "h": 0.13346
+    },
+    "REEL_2": {
+     "x": 0.53111,
+     "y": 0.72982,
+     "w": 0.19682,
+     "h": 0.13346
+    },
+    "SPIN": {
+     "x": 0.2576,
+     "y": 0.8763,
+     "w": 0.47178,
+     "h": 0.0638
+    },
+    "PLAYER_AREA": {
+     "x": 0.62373,
+     "y": 0.52344,
+     "w": 0.31983,
+     "h": 0.14453
+    },
+    "MESSAGE_AREA": {
+     "x": 0.13025,
+     "y": 0.94792,
+     "w": 0.73806,
+     "h": 0.02734
+    }
+   },
+   "pawn_size": {
+    "board_w": 0.03907,
+    "yard_w": 0.06946,
+    "two_on_square_scale": 0.65,
+    "two_on_square_offset_of_cell_long_axis": 0.25
+   }
+  },
+  "win": {
+   "plate_resource": "screen_win",
+   "plate_px": [
+    720,
+    1600
+   ],
+   "zones": {
+    "PLAY_AGAIN": {
+     "x": 0.12366,
+     "y": 0.83422,
+     "w": 0.75268,
+     "h": 0.10909
+    }
+   }
+  },
+  "loss": {
+   "plate_resource": "screen_loss",
+   "plate_px": [
+    720,
+    1600
+   ],
+   "zones": {
+    "TRY_AGAIN": {
+     "x": 0.11389,
+     "y": 0.81937,
+     "w": 0.79306,
+     "h": 0.1075
+    }
+   }
+  }
+ }
+}
