@@ -493,8 +493,24 @@ object GameplayRenderer {
         }
     }
     private fun DrawScope.drawReels(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
-        drawReel(layout, gc.zones.getValue("REEL_1"), vm.reel1, vm.reelAnimationElapsed(now), now)
-        drawReel(layout, gc.zones.getValue("REEL_2"), vm.reel2, vm.reelAnimationElapsed(now), now)
+        val engine = vm.engine ?: return
+        val humanTurn = engine.currentColor == vm.humanColor
+        val elapsed = vm.reelAnimationElapsed(now)
+
+        if (humanTurn) {
+            // The large machine belongs only to the human player. During the
+            // human spin it animates live; afterward it holds the human's roll.
+            val saved = vm.lastRolls[vm.humanColor]
+            val first = if (vm.reel1.value in 1..6) vm.reel1 else ReelViewState(value = saved?.first ?: 0)
+            val second = if (vm.reel2.value in 1..6) vm.reel2 else ReelViewState(value = saved?.second ?: 0)
+            drawReel(layout, gc.zones.getValue("REEL_1"), first, elapsed, now)
+            drawReel(layout, gc.zones.getValue("REEL_2"), second, elapsed, now)
+        } else {
+            // AI rolls never replace the human's large-machine result.
+            val saved = vm.lastRolls[vm.humanColor]
+            drawReel(layout, gc.zones.getValue("REEL_1"), ReelViewState(value = saved?.first ?: 0), -1L, now)
+            drawReel(layout, gc.zones.getValue("REEL_2"), ReelViewState(value = saved?.second ?: 0), -1L, now)
+        }
     }
 
     private fun DrawScope.drawReel(
