@@ -503,18 +503,41 @@ object GameplayRenderer {
 
     private fun DrawScope.drawReelDigit(value: Int, cx: Float, cy: Float, sizePx: Float, alpha: Int, blurRadius: Float) {
         drawIntoCanvas { canvas ->
-            val paint = Paint().apply {
+            val y = cy - (Paint().apply { textSize = sizePx }.descent() + Paint().apply { textSize = sizePx }.ascent()) / 2f
+            val symbol = value.toString()
+            val native = canvas.nativeCanvas
+
+            // Classic slot-machine number treatment: black outer edge, gold keyline,
+            // glossy red face, and a soft shadow. This applies to 1–6 only.
+            val outer = Paint().apply {
                 isAntiAlias = true
                 textAlign = Paint.Align.CENTER
                 typeface = Typeface.DEFAULT_BOLD
                 textSize = sizePx
-                color = android.graphics.Color.argb(alpha, 0x3B, 0x1E, 0x0E)
-                if (blurRadius > 0.1f) {
-                    setShadowLayer(blurRadius, 0f, 0f, android.graphics.Color.argb(alpha, 0x3B, 0x1E, 0x0E))
-                }
+                style = Paint.Style.STROKE
+                strokeWidth = sizePx * 0.16f
+                color = android.graphics.Color.argb(alpha, 0x18, 0x0A, 0x04)
             }
-            val y = cy - (paint.descent() + paint.ascent()) / 2f
-            canvas.nativeCanvas.drawText(value.toString(), cx, y, paint)
+            native.drawText(symbol, cx, y, outer)
+
+            val gold = Paint(outer).apply {
+                strokeWidth = sizePx * 0.095f
+                color = android.graphics.Color.argb(alpha, 0xFF, 0xD3, 0x35)
+            }
+            native.drawText(symbol, cx, y, gold)
+
+            val face = Paint(outer).apply {
+                style = Paint.Style.FILL
+                color = android.graphics.Color.argb(alpha, 0xD9, 0x16, 0x16)
+                setShadowLayer(blurRadius + 2f, 0f, layoutSafeShadow(sizePx), android.graphics.Color.argb(alpha, 0x42, 0x00, 0x00))
+            }
+            native.drawText(symbol, cx, y, face)
+
+            val shine = Paint(face).apply {
+                color = android.graphics.Color.argb((alpha * 0.42f).toInt(), 0xFF, 0xB0, 0x90)
+                textSize = sizePx * 0.92f
+            }
+            native.drawText(symbol, cx - sizePx * 0.012f, y - sizePx * 0.018f, shine)
         }
     }
 
