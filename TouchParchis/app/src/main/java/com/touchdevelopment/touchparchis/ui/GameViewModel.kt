@@ -573,6 +573,8 @@ class GameViewModel(
 
     /** Elapsed time since the reels started, and whether they are animating. */
     fun reelAnimationElapsed(now: Long): Long = if (reelsActive) now - reelStartAt else -1L
+    fun isHumanReelSpinActive(): Boolean = reelsActive && reelSpinnerColor == humanColor
+
 
     fun reelStopDurationMs(slot: ReelSlot): Long =
         (if (slot == ReelSlot.R1) reel1StopAt else reel2StopAt) - reelStartAt
