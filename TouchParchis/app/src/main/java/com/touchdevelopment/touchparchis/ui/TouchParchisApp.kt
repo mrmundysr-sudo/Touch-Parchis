@@ -734,6 +734,112 @@ object GameplayRenderer {
     }
 }
 
+
+
+// Low-latency reel sounds; SoundPool plays short synthesized WAV assets and follows
+// the system media mute state. This V1 project has no in-app sound toggle.
+private class SlotReelSoundController(context: Context) {
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val pool = SoundPool.Builder()
+        .setMaxStreams(6)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+        )
+        .build()
+    private val lever = pool.load(context, R.raw.slot_lever, 1)
+    private val loop = pool.load(context, R.raw.slot_loop, 1)
+    private val tick = pool.load(context, R.raw.slot_tick, 1)
+    private val stop = pool.load(context, R.raw.slot_stop, 1)
+    private val doubles = pool.load(context, R.raw.slot_doubles, 1)
+
+    private var active = false
+    private var loopStream = 0
+    private var lastDoublesAt = 0L
+    private val lastTickAt = longArrayOf(0L, 0L)
+    private val stopPlayed = booleanArrayOf(false, false)
+
+    fun update(vm: GameViewModel, now: Long) {
+        val oneActive = vm.reel1.phase != ReelPhase.IDLE
+        val twoActive = vm.reel2.phase != ReelPhase.IDLE
+        val anyActive = oneActive || twoActive
+        if (anyActive && !active) {
+            active = true
+            lastTickAt[0] = now
+            lastTickAt[1] = now
+            stopPlayed[0] = false
+            stopPlayed[1] = false
+            play(lever)
+        }
+        if (anyActive) {
+            if (loopStream == 0) {
+                loopStream = pool.play(loop, volume(), volume(), 1, -1, 0.72f)
+            }
+            if (loopStream != 0) pool.setRate(loopStream, reelPitch(vm, now))
+            for (i in 0..1) {
+                val slot = if (i == 0) ReelSlot.R1 else ReelSlot.R2
+                val settling = vm.reelSettleElapsed(now, slot)
+                if (settling in 0L..REEL_DECEL_MS) {
+                    val progress = settling.toFloat() / REEL_DECEL_MS
+                    val speed = (REEL_SYMBOLS_PER_SECOND * (1f - progress) * (1f - progress)).coerceAtLeast(2f)
+                    val interval = (1000f / speed).toLong()
+                    if (now - lastTickAt[i] >= interval) {
+                        play(tick)
+                        lastTickAt[i] = now
+                    }
+                }
+                if (settling >= REEL_DECEL_MS && !stopPlayed[i]) {
+                    stopPlayed[i] = true
+                    play(stop, if (i == 0) 0.92f else 1.06f)
+                }
+            }
+        } else if (active) {
+            active = false
+            if (loopStream != 0) pool.stop(loopStream)
+            loopStream = 0
+        }
+        if (vm.doublesPulseAtMs > 0L && vm.doublesPulseAtMs != lastDoublesAt) {
+            lastDoublesAt = vm.doublesPulseAtMs
+            play(doubles)
+        }
+    }
+
+    private fun reelPitch(vm: GameViewModel, now: Long): Float {
+        val elapsed = vm.reelAnimationElapsed(now).coerceAtLeast(0L)
+        val durations = listOf(vm.reelStopDurationMs(ReelSlot.R1), vm.reelStopDurationMs(ReelSlot.R2))
+        var pitch = 0.72f
+        for (duration in durations) {
+            val decelStart = duration - REEL_DECEL_MS
+            val current = when {
+                elapsed < REEL_ACCEL_MS -> 0.72f + 0.34f * (elapsed.toFloat() / REEL_ACCEL_MS).coerceIn(0f, 1f)
+                elapsed < decelStart -> 1.06f
+                elapsed < duration -> 1.06f - 0.46f * ((elapsed - decelStart).toFloat() / REEL_DECEL_MS).coerceIn(0f, 1f)
+                else -> 0.60f
+            }
+            pitch = maxOf(pitch, current)
+        }
+        return pitch.coerceIn(0.60f, 1.12f)
+    }
+
+    private fun volume(): Float {
+        val mediaMuted = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) <= 0
+        val silenced = Build.VERSION.SDK_INT >= 23 && audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT
+        return if (mediaMuted || silenced) 0f else SLOT_SOUND_VOLUME
+    }
+
+    private fun play(sound: Int, rate: Float = 1f) {
+        val v = volume()
+        if (v > 0f) pool.play(sound, v, v, 1, 0, rate)
+    }
+
+    fun release() {
+        if (loopStream != 0) pool.stop(loopStream)
+        pool.release()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Drawing helpers
 // ---------------------------------------------------------------------------
