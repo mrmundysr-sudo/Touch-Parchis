@@ -108,6 +108,10 @@ class GameViewModel(
     var openingTotals by mutableStateOf<Map<ParchisColor, Int>>(emptyMap())
         private set
 
+    /** Most recent two-number roll retained for every player display. */
+    var lastRolls by mutableStateOf<Map<ParchisColor, Pair<Int, Int>>>(emptyMap())
+        private set
+
     var animations by mutableStateOf<List<Anim>>(emptyList())
         private set
 
@@ -237,12 +241,13 @@ class GameViewModel(
         when (e.phase) {
             GamePhase.AWAIT_SPIN -> if (now >= aiActAtMs) {
                 doSpin()
-                aiActAtMs = now + nextAiDelay
-                nextAiDelay = 600 + (rng.nextFloat() * 300).toLong()
+                // Leave time for the reels to settle and the player to read the result.
+                aiActAtMs = now + 1500L
+                nextAiDelay = 900 + (rng.nextFloat() * 500).toLong()
             }
             GamePhase.AWAIT_MOVE -> if (now >= aiActAtMs) {
                 aiStep()
-                aiActAtMs = now + 350
+                aiActAtMs = now + 800
             }
             else -> {}
         }
@@ -250,7 +255,9 @@ class GameViewModel(
 
     private fun performOpeningSpin() {
         val e = engine ?: return
+        val spinner = e.nextOpeningSpinner()
         val res = e.openingSpin()
+        lastRolls = lastRolls + (spinner to (res.r1 to res.r2))
         openingTotals = e.openingTotals.toMap()
         startReelAnimation(res.r1, res.r2)
         openingSettling = true
@@ -296,6 +303,7 @@ class GameViewModel(
     private fun doSpin() {
         val e = engine ?: return
         val result = e.spin()
+        lastRolls = lastRolls + (e.currentColor to (result.r1 to result.r2))
         startReelAnimation(result.r1, result.r2)
         choices = null
         spinLocked = true
