@@ -315,8 +315,8 @@ class GameViewModel(
     private fun startReelAnimation(r1: Int, r2: Int) {
         val now = clock()
         reelStartAt = now
-        reel1StopAt = now + 700
-        reel2StopAt = now + 1000
+        reel1StopAt = now + 900L
+        reel2StopAt = now + 1250L
         reelsActive = true
         reel1 = ReelViewState(value = r1, phase = ReelPhase.SPINNING)
         reel2 = ReelViewState(value = r2, phase = ReelPhase.SPINNING)
@@ -324,16 +324,22 @@ class GameViewModel(
 
     private fun tickReels(now: Long) {
         if (!reelsActive) return
+        val settleDuration = 260L
+
         if (reel1.phase == ReelPhase.SPINNING && now >= reel1StopAt) {
             reel1 = reel1.copy(phase = ReelPhase.SETTLING)
+        } else if (reel1.phase == ReelPhase.SETTLING && now >= reel1StopAt + settleDuration) {
+            reel1 = reel1.copy(phase = ReelPhase.IDLE)
         }
+
         if (reel2.phase == ReelPhase.SPINNING && now >= reel2StopAt) {
             reel2 = reel2.copy(phase = ReelPhase.SETTLING)
-        }
-        if (reel1.phase != ReelPhase.SPINNING && reel2.phase != ReelPhase.SPINNING) {
-            reelsActive = false
-            reel1 = reel1.copy(phase = ReelPhase.IDLE)
+        } else if (reel2.phase == ReelPhase.SETTLING && now >= reel2StopAt + settleDuration) {
             reel2 = reel2.copy(phase = ReelPhase.IDLE)
+        }
+
+        if (reel1.phase == ReelPhase.IDLE && reel2.phase == ReelPhase.IDLE) {
+            reelsActive = false
             onReelsSettled()
         }
     }
@@ -554,6 +560,14 @@ class GameViewModel(
 
     /** Elapsed time since the reels started, and whether they are animating. */
     fun reelAnimationElapsed(now: Long): Long = if (reelsActive) now - reelStartAt else -1L
+
+    /** Time spent in the individual reel's settling phase, or -1 while it is not settling. */
+    fun reelSettleElapsed(now: Long, slot: ReelSlot): Long {
+        val state = if (slot == ReelSlot.R1) reel1 else reel2
+        if (state.phase != ReelPhase.SETTLING) return -1L
+        val stopAt = if (slot == ReelSlot.R1) reel1StopAt else reel2StopAt
+        return (now - stopAt).coerceAtLeast(0L)
+    }
 
     /** Message for the active player: the human's prompt, or "X is thinking…". */
     private fun turnMessage(color: ParchisColor, humanRes: Int): UiMessage =
