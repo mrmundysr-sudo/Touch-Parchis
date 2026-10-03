@@ -412,6 +412,7 @@ object GameplayRenderer {
             // Slot cabinet, reels, spin button, opening-spin totals, message.
             drawSlotCabinet(layout, gc)
             drawReels(layout, gc, vm, now)
+            drawAiReelDisplays(layout, gc, vm, now)
             drawSpinButton(layout, gc, vm, spinLabel)
             drawOpeningTotals(layout, gc, vm)
             drawMessage(layout, gc, messageText)
@@ -446,6 +447,48 @@ object GameplayRenderer {
         drawLine(Color(0xFF6A2B09), Offset(leverX, leverTop), Offset(leverX, leverTop + layout.h(0.070f)), layout.w(0.012f))
         drawCircle(Color(0xFF8B0E12), layout.w(0.028f), Offset(leverX, leverTop))
         drawCircle(Color(0xFFFF4B3E), layout.w(0.017f), Offset(leverX - layout.w(0.006f), leverTop - layout.h(0.006f)))
+    }
+    private fun DrawScope.drawAiReelDisplays(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
+        val engine = vm.engine ?: return
+        val human = vm.humanColor
+        val aiColors = engine.activeSeats.filter { it != human }
+        if (aiColors.isEmpty()) return
+        val active = engine.currentColor
+        val first = if (vm.reel1.value in 1..6) vm.reel1.value else engine.reel1
+        val second = if (vm.reel2.value in 1..6) vm.reel2.value else engine.reel2
+        val scrolling = vm.reelsActive
+        for (color in aiColors) {
+            val strip = layout.rect(gc.yards.getValue(color).labelStrip)
+            val displayW = strip.width * 0.58f
+            val displayH = minOf(strip.height * 1.65f, layout.h(0.050f))
+            val left = strip.centerX - displayW / 2f
+            val top = strip.centerY - displayH / 2f
+            val gap = layout.w(0.008f)
+            val cellW = (displayW - gap) / 2f
+            val activeDisplay = color == active && scrolling
+            for (i in 0..1) {
+                val x = left + i * (cellW + gap)
+                drawRoundRect(Color(0xDD211108), Offset(x, top), Size(cellW, displayH), CornerRadius(layout.w(0.008f)))
+                drawRoundRect(Color(0xFFFFD24A), Offset(x, top), Size(cellW, displayH), CornerRadius(layout.w(0.008f)), style = Stroke(width = layout.w(0.0025f)))
+                val value = if (activeDisplay) ((if (i == 0) first else second) + ((now / 85L + i) % 6).toInt()) % 6 + 1 else if (i == 0) first else second
+                drawMiniReelDigit(value, x + cellW / 2f, top + displayH / 2f, displayH * 0.72f, if (activeDisplay) 190 else 255)
+            }
+        }
+    }
+
+    private fun DrawScope.drawMiniReelDigit(value: Int, cx: Float, cy: Float, sizePx: Float, alpha: Int) {
+        drawIntoCanvas { canvas ->
+            val paint = Paint().apply {
+                isAntiAlias = true
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+                textSize = sizePx
+                color = android.graphics.Color.argb(alpha, 0xFF, 0xD3, 0x35)
+                setShadowLayer(sizePx * 0.04f, 0f, sizePx * 0.03f, android.graphics.Color.argb(alpha, 0x00, 0x00, 0x00))
+            }
+            val y = cy - (paint.descent() + paint.ascent()) / 2f
+            canvas.nativeCanvas.drawText(value.toString(), cx, y, paint)
+        }
     }
     private fun DrawScope.drawReels(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         drawReel(layout, gc.zones.getValue("REEL_1"), vm.reel1, vm.reelAnimationElapsed(now), now)
