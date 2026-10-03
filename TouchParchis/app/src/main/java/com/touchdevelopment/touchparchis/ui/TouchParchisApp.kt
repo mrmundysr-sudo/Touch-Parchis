@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -408,7 +409,8 @@ object GameplayRenderer {
                 drawCircle(SELECT_GLOW, radius = boardBase * 0.72f, center = Offset(ppx, ppy), style = Stroke(width = layout.w(0.006f)))
             }
 
-            // Reels, spin button, opening-spin totals, message.
+            // Slot cabinet, reels, spin button, opening-spin totals, message.
+            drawSlotCabinet(layout, gc)
             drawReels(layout, gc, vm, now)
             drawSpinButton(layout, gc, vm, spinLabel)
             drawOpeningTotals(layout, gc, vm)
@@ -422,6 +424,29 @@ object GameplayRenderer {
         return NormRect(sc.cx - sc.w / 2f, sc.cy - sc.h / 2f, sc.w, sc.h)
     }
 
+    private fun DrawScope.drawSlotCabinet(layout: BoardLayout, gc: GameplayCoords) {
+        val one = layout.rect(gc.zones.getValue("REEL_1"))
+        val two = layout.rect(gc.zones.getValue("REEL_2"))
+        val left = minOf(one.left, two.left) - layout.w(0.018f)
+        val top = minOf(one.top, two.top) - layout.h(0.012f)
+        val right = maxOf(one.right, two.right) + layout.w(0.018f)
+        val bottom = maxOf(one.bottom, two.bottom) + layout.h(0.012f)
+        val cabinet = Size(right - left, bottom - top)
+        val radius = CornerRadius(layout.w(0.028f))
+        drawRoundRect(Color(0xAA160B06), Offset(left + layout.w(0.008f), top + layout.h(0.010f)), cabinet, radius)
+        drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFF0A0), Color(0xFFD88A12), Color(0xFF7A3508), Color(0xFFF6C64A))), Offset(left, top), cabinet, radius)
+        drawRoundRect(Color(0xFF3A1708), Offset(left + layout.w(0.010f), top + layout.h(0.010f)), Size(cabinet.width - layout.w(0.020f), cabinet.height - layout.h(0.020f)), CornerRadius(layout.w(0.020f)))
+        for (window in listOf(one, two)) {
+            drawRoundRect(Brush.verticalGradient(listOf(Color.White, Color(0xFFB9C2CA), Color(0xFF5B6268), Color(0xFFEFF5F8))), Offset(window.left - layout.w(0.007f), window.top - layout.h(0.006f)), Size(window.width + layout.w(0.014f), window.height + layout.h(0.012f)), CornerRadius(layout.w(0.014f)))
+            drawRoundRect(Color(0xFF101217), Offset(window.left, window.top), Size(window.width, window.height), CornerRadius(layout.w(0.010f)), style = Stroke(width = layout.w(0.004f)))
+        }
+        drawLine(Color(0xFFFFD85A), Offset((one.right + two.left) / 2f, top + layout.h(0.010f)), Offset((one.right + two.left) / 2f, bottom - layout.h(0.010f)), layout.w(0.010f))
+        val leverX = right + layout.w(0.026f)
+        val leverTop = top + cabinet.height * 0.16f
+        drawLine(Color(0xFF6A2B09), Offset(leverX, leverTop), Offset(leverX, leverTop + layout.h(0.070f)), layout.w(0.012f))
+        drawCircle(Color(0xFF8B0E12), layout.w(0.028f), Offset(leverX, leverTop))
+        drawCircle(Color(0xFFFF4B3E), layout.w(0.017f), Offset(leverX - layout.w(0.006f), leverTop - layout.h(0.006f)))
+    }
     private fun DrawScope.drawReels(layout: BoardLayout, gc: GameplayCoords, vm: GameViewModel, now: Long) {
         drawReel(layout, gc.zones.getValue("REEL_1"), vm.reel1, vm.reelAnimationElapsed(now), now)
         drawReel(layout, gc.zones.getValue("REEL_2"), vm.reel2, vm.reelAnimationElapsed(now), now)
