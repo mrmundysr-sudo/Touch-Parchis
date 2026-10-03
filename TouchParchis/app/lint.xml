@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Intentional V1 decisions, documented in RULES.md and DEEPSEEK_BUILD_INSTRUCTIONS.md:
+  - The side-view selector sprites are reserved resources, unused in V1.
+  - Portrait lock is required.
+  - The build uses pinned dependency versions.
+-->
+<lint>
+    <issue id="UnusedResources">
+        <ignore path="src/main/res/drawable-nodpi/pawn_selector_*.png" />
+    </issue>
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+</lint>
