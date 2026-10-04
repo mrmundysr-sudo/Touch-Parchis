@@ -47,11 +47,8 @@ val copyScoobertSprite = tasks.register<Copy>("copyScoobertSprite") {
     into(generatedSpriteDir)
     rename { "scoobert_sprite_sheet.png" }
 }
-androidComponents {
-    onVariants(selector().all()) { variant ->
-        variant.sources.res?.addGeneratedSourceDirectory(copyScoobertSprite) { generatedSpriteDir }
-    }
-}
+android.sourceSets.getByName("main").res.srcDir(generatedSpriteDir)
+tasks.named("preBuild").configure { dependsOn(copyScoobertSprite) }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
