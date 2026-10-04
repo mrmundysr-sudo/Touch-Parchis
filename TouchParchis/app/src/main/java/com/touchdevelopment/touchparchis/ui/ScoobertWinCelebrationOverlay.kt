@@ -59,6 +59,7 @@ fun ScoobertWinCelebrationOverlay() {
     val green = ImageBitmap.imageResource(R.drawable.pawn_board_green)
     val blue = ImageBitmap.imageResource(R.drawable.pawn_board_blue)
     val pawns = remember(red, yellow, green, blue) { listOf(red, yellow, green, blue) }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val pieces = remember {
         Random(0x50415243).let { rng ->
             List(28) { i ->
@@ -77,7 +78,7 @@ fun ScoobertWinCelebrationOverlay() {
         }
     }
     var now by remember { mutableLongStateOf(0L) }
-    val audio = remember { WinCelebrationSoundController(LocalContext.current) }
+    val audio = remember(context) { WinCelebrationSoundController(context) }
 
     DisposableEffect(audio) { onDispose { audio.release() } }
     LaunchedEffect(Unit) {
