@@ -2,6 +2,7 @@ package com.touchdevelopment.touchparchis.ui
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.SoundPool
 import androidx.compose.foundation.Canvas
@@ -19,10 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -53,13 +54,13 @@ private val pieceColors = listOf(
 
 @Composable
 fun ScoobertWinCelebrationOverlay() {
-    val sheet = ImageBitmap.imageResource(R.drawable.scoobert_sprite_sheet)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sheet = remember(context) { context.assets.open("scoobert_sprite_sheet.png").use { BitmapFactory.decodeStream(it).asImageBitmap() } }
     val red = ImageBitmap.imageResource(R.drawable.pawn_board_red)
     val yellow = ImageBitmap.imageResource(R.drawable.pawn_board_yellow)
     val green = ImageBitmap.imageResource(R.drawable.pawn_board_green)
     val blue = ImageBitmap.imageResource(R.drawable.pawn_board_blue)
     val pawns = remember(red, yellow, green, blue) { listOf(red, yellow, green, blue) }
-    val context = androidx.compose.ui.platform.LocalContext.current
     val pieces = remember {
         Random(0x50415243).let { rng ->
             List(28) { i ->
