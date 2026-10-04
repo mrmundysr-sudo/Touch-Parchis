@@ -41,13 +41,13 @@ android {
 }
 
 val spriteSheet = rootProject.file("../exec-aaf8d1f4-7766-4181-b02b-37495752eb92.png")
-val generatedSpriteDir = layout.buildDirectory.dir("generated/scoobert/res/drawable-nodpi")
+val generatedSpriteDir = layout.buildDirectory.dir("generated/scoobert/assets")
 val copyScoobertSprite = tasks.register<Copy>("copyScoobertSprite") {
     from(spriteSheet)
     into(generatedSpriteDir)
     rename { "scoobert_sprite_sheet.png" }
 }
-android.sourceSets.getByName("main").res.srcDir(layout.buildDirectory.dir("generated/scoobert"))
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/scoobert"))
 tasks.named("preBuild").configure { dependsOn(copyScoobertSprite) }
 
 dependencies {
