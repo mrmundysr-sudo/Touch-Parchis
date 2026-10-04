@@ -33,6 +33,26 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
+private fun loadKeyedSpriteSheet(context: Context): ImageBitmap {
+    val source = context.assets.open("scoobert_sprite_sheet.png").use {
+        BitmapFactory.decodeStream(it).copy(Bitmap.Config.ARGB_8888, true)
+    }
+    val pixels = IntArray(source.width * source.height)
+    source.getPixels(pixels, 0, source.width, 0, 0, source.width, source.height)
+    for (i in pixels.indices) {
+        val p = pixels[i]
+        val r = android.graphics.Color.red(p)
+        val g = android.graphics.Color.green(p)
+        val b = android.graphics.Color.blue(p)
+        val matteDistance = kotlin.math.sqrt(
+            ((r - 88) * (r - 88) + (g - 88) * (g - 88) + (b - 88) * (b - 88)).toDouble()
+        )
+        if (matteDistance < 42.0) pixels[i] = android.graphics.Color.TRANSPARENT
+    }
+    source.setPixels(pixels, 0, source.width, 0, 0, source.width, source.height)
+    return source.asImageBitmap()
+}
+
 private data class CelebrationPiece(
     val colorIndex: Int,
     val x: Float,
@@ -55,7 +75,7 @@ private val pieceColors = listOf(
 @Composable
 fun ScoobertWinCelebrationOverlay() {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val sheet = remember(context) { context.assets.open("scoobert_sprite_sheet.png").use { BitmapFactory.decodeStream(it).asImageBitmap() } }
+    val sheet = remember(context) { loadKeyedSpriteSheet(context) }
     val red = ImageBitmap.imageResource(R.drawable.pawn_board_red)
     val yellow = ImageBitmap.imageResource(R.drawable.pawn_board_yellow)
     val green = ImageBitmap.imageResource(R.drawable.pawn_board_green)
