@@ -31,27 +31,25 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures {
-        compose = true
-    }
+    buildFeatures { compose = true }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    androidResources { noCompress += listOf("json") }
+}
 
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-
-    // Plate/pawn PNGs and JSON must not be compressed away or renamed by the packager.
-    androidResources {
-        noCompress += listOf("json")
+val spriteSheet = rootProject.file("../exec-aaf8d1f4-7766-4181-b02b-37495752eb92.png")
+val generatedSpriteDir = layout.buildDirectory.dir("generated/scoobert/res/drawable-nodpi")
+val copyScoobertSprite = tasks.register<Copy>("copyScoobertSprite") {
+    from(spriteSheet)
+    into(generatedSpriteDir)
+    rename { "scoobert_sprite_sheet.png" }
+}
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(copyScoobertSprite) { generatedSpriteDir }
     }
 }
 
@@ -66,7 +64,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.7.2")
     implementation("androidx.compose.material3:material3:1.3.0")
     debugImplementation("androidx.compose.ui:ui-tooling:1.7.2")
-
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.24")
 }
