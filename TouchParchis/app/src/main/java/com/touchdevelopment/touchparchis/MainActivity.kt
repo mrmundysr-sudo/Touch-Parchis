@@ -47,3 +47,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+// AUTOBUILD FAILURE-REPORT TEST: deliberate compile error, remove me.
+private val autobuildFailureProbe: Int = "not an int"
